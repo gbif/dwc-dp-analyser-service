@@ -63,8 +63,8 @@ public class Main {
           log.warn("Error during shutdown", e);
         }
       }));
+      Thread.currentThread().join();
     }
 
-    Thread.currentThread().join();
   }
 }

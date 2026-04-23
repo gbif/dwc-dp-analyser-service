@@ -49,7 +49,6 @@ public class DwcValidator implements Validator {
     log.info("Unzipping [{}] to [{}]", zipFile, unpackDir);
     ZipUtils.unzip(zipFile, unpackDir);
 
-    ValidationOptions validationOptions = new ValidationOptions(20, null, new DefaultDuckDbConfig());
-    return validator.analyse(unpackDir.resolve("datapackage.json"), validationOptions, ONLY_VALIDATION);
+    return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
   }
 }
