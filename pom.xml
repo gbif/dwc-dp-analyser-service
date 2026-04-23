@@ -2,20 +2,75 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+  <modelVersion>4.0.0</modelVersion>
 
+  <parent>
     <groupId>org.gbif</groupId>
-    <artifactId>dwc-dp-analyser-service</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <modules>
-        <module>dwc-dp-analyser-service-app</module>
-      <module>dwc-dp-analyser-service-api</module>
-    </modules>
+    <artifactId>motherpom</artifactId>
+    <version>61</version>
+  </parent>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+  <artifactId>dwc-dp-analyser-service</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>dwc-dp-analyser-service</name>
+  <description>
+    A lightweight service that consumes Darwin Core Data Package (DwC-DP) download
+    events from RabbitMQ, validates the archive, and publishes a message if valid
+  </description>
+  <url>https://github.org/gbif/dwc-dp-analyser-service</url>
+
+  <scm>
+    <connection>scm:git:git@github.com:gbif/dwc-dp-analyser-service.git</connection>
+    <url>https://github.com/gbif/dwc-dp-analyser-service</url>
+    <developerConnection>scm:git:git@github.com:gbif/dwc-dp-analyser-service.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+
+  <repositories>
+    <repository>
+      <id>gbif-all</id>
+      <url>https://repository.gbif.org/content/groups/gbif</url>
+    </repository>
+    <repository>
+      <id>thirdparty</id>
+      <url>https://repository.gbif.org/content/repositories/thirdparty</url>
+    </repository>
+    <repository>
+      <id>repository.cloudera.com</id>
+      <url>https://repository.cloudera.com/content/repositories/releases/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <distributionManagement>
+    <site>
+      <id>gh-pages</id>
+      <url>http://gbif.github.io/dwc-dp-analyser-service/</url>
+    </site>
+    <repository>
+      <id>gbif-release</id>
+      <url>https://repository.gbif.org/content/repositories/releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>gbif-deploy</id>
+      <url>https://repository.gbif.org/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
+
+  <modules>
+    <module>dwc-dp-analyser-service-app</module>
+    <module>dwc-dp-analyser-service-api</module>
+  </modules>
+
+  <properties>
+    <!-- General java versions and properties -->
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 </project>
