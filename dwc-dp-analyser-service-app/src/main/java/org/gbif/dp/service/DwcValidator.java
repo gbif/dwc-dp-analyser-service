@@ -3,7 +3,7 @@ package org.gbif.dp.service;
 import org.gbif.dp.analysis.AnalysisFeature;
 import org.gbif.dp.analysis.DataPackageAnalyser;
 import org.gbif.dp.analysis.ValidationOptions;
-import org.gbif.dp.analysis.model.DatapackageAnalysisResult;
+import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import org.gbif.dp.duckdb.DefaultDuckDbConfig;
 

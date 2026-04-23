@@ -1,8 +1,8 @@
 package org.gbif.dp.service;
 
-import org.gbif.dp.analysis.ResourceAnalysisResult;
-import org.gbif.dp.analysis.model.DatapackageAnalysisResult;
-import org.gbif.dp.analysis.model.PrimaryKeyViolation;
+import org.gbif.dp.analysis.api.ResourceAnalysisResult;
+import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
+import org.gbif.dp.analysis.api.PrimaryKeyViolation;
 
 import java.util.List;
 

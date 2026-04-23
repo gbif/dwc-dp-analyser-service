@@ -2,7 +2,7 @@ package org.gbif.dp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.gbif.dp.analysis.model.DatapackageAnalysisResult;
+import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.service.api.DwcDpValidationFinished;
 
 import org.junit.jupiter.api.BeforeEach;

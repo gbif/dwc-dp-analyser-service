@@ -1,6 +1,6 @@
 package org.gbif.dp.service;
 
-import org.gbif.dp.analysis.model.DatapackageAnalysisResult;
+import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
