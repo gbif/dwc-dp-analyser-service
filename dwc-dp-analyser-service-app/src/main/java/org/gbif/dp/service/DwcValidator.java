@@ -36,10 +36,10 @@ public class DwcValidator implements Validator {
 
   @Override
   public DatapackageAnalysisResult validate(ValidationRequest request) throws Exception {
-    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.zip
+    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
     Path zipFile = archiveRepository
       .resolve(request.datasetUuid())
-      .resolve(request.datasetUuid() + "." + request.attempt() + ".zip");
+      .resolve(request.datasetUuid() + "." + request.attempt() + ".dwcdp");
 
     // {unpackRepository}/{datasetUuid}/{datasetUuid}.{attempt}/
     Path unpackDir = unpackRepository

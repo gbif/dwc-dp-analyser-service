@@ -24,13 +24,13 @@ class DwcValidatorTest {
   @BeforeEach
   void setUp() throws Exception {
     // Place the fixture zip at the expected path:
-    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.zip
+    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
     Path datasetDir = archiveRepository.resolve(DATASET_UUID);
     Files.createDirectories(datasetDir);
-    Path zipDest = datasetDir.resolve(DATASET_UUID + "." + ATTEMPT + ".zip");
+    Path zipDest = datasetDir.resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
 
-    try (var in = getClass().getResourceAsStream("/fixtures/test-dataset.zip")) {
-      assertNotNull(in, "Fixture zip not found in test resources");
+    try (var in = getClass().getResourceAsStream("/fixtures/test-dataset.dwcdp")) {
+      assertNotNull(in, "Fixture zip(dwcdp) not found in test resources");
       Files.copy(in, zipDest, StandardCopyOption.REPLACE_EXISTING);
     }
   }
