@@ -1,5 +1,6 @@
 package org.gbif.dp.service;
 
+import org.gbif.dp.analysis.ValidationOptions;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ class DwcValidatorTest {
 
   private static final String DATASET_UUID = "test-dataset-uuid";
   private static final int ATTEMPT = 1;
+  private DwcValidator.DwcValidatorConfig config;
 
   @BeforeEach
   void setUp() throws Exception {
@@ -33,6 +35,8 @@ class DwcValidatorTest {
       assertNotNull(in, "Fixture zip(dwcdp) not found in test resources");
       Files.copy(in, zipDest, StandardCopyOption.REPLACE_EXISTING);
     }
+
+    this.config = new DwcValidator.DwcValidatorConfig(archiveRepository, unpackRepository, ValidationOptions.defaults());
   }
 
   @Test
@@ -44,8 +48,7 @@ class DwcValidatorTest {
         capturedPath.set(datapackagePath);
         return DatapackageAnalysisTestResults.validResult();
       },
-      archiveRepository,
-      unpackRepository);
+      config);
 
     DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
 
@@ -63,8 +66,7 @@ class DwcValidatorTest {
   void validate_missingZip_throwsException() {
     DwcValidator validator = new DwcValidator(
       (datapackagePath, options, features) -> DatapackageAnalysisTestResults.validResult(),
-      archiveRepository,
-      unpackRepository);
+      config);
 
     // Use a UUID that has no zip on disk
     assertThrows(Exception.class,

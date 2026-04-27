@@ -1,0 +1,69 @@
+version: '3'
+
+vars:
+  IMAGE: '{{.IMAGE | default "dwc-dp-analyser-service:latest"}}'
+  CONTAINER_CLI:
+    sh: which docker 2>/dev/null || which podman 2>/dev/null || echo "docker"
+
+tasks:
+  clean:
+    desc: Run Maven clean
+    cmds:
+      - mvn clean
+
+  package:
+    desc: Build the fat jar (skip tests)
+    cmds:
+      - mvn package -DskipTests
+
+  verify:
+    desc: Run full Maven verify lifecycle including tests
+    cmds:
+      - mvn verify
+
+  docker:build:
+    desc: Build Docker image (IMAGE=name:tag)
+    cmds:
+      - '{{.CONTAINER_CLI}} build -t {{.IMAGE}} .'
+
+  docker:run:
+    desc: Run the Docker image
+    requires:
+      vars: [ARCHIVE_REPOSITORY, UNPACK_REPOSITORY]
+    cmds:
+      - '{{.CONTAINER_CLI}} run --rm
+        -v {{.ARCHIVE_REPOSITORY}}:/data/datapackages
+        -v {{.UNPACK_REPOSITORY}}:/data/datapackages-unpacked
+        -e RABBIT_HOST={{.RABBIT_HOST | default "localhost"}}
+        -e RABBIT_PORT={{.RABBIT_PORT | default "5672"}}
+        -e RABBIT_USER={{.RABBIT_USER | default "guest"}}
+        -e RABBIT_PASSWORD={{.RABBIT_PASSWORD | default "guest"}}
+        -e RABBIT_VHOST={{.RABBIT_VHOST | default "/"}}
+        -e IN_QUEUE={{.IN_QUEUE | default "dwcdp.download.finished"}}
+        -e OUT_QUEUE={{.OUT_QUEUE | default "dwcdp.validation.result"}}
+        {{.IMAGE}}'
+
+  docker:run:local:
+    desc: Run with archive and unpack repos pointing to ~/data
+    vars:
+      GATEWAY:
+        sh: bash scripts/gateway.sh | tee
+    cmds:
+      - mkdir -p {{.HOME}}/data/datapackages
+      - mkdir -p {{.HOME}}/data/datapackages-unpacked
+      - task: docker:run
+        vars:
+          ARCHIVE_REPOSITORY: '{{.HOME}}/data/datapackages'
+          UNPACK_REPOSITORY: '{{.HOME}}/data/datapackages-unpacked'
+          RABBIT_HOST: '{{.GATEWAY}}'
+
+  local:
+    desc: Start RabbitMQ + analyser locally via Compose
+    cmds:
+      - '{{.CONTAINER_CLI}} compose -f docker-compose.local.yml up'
+
+  dist:
+    desc: Build jar and Docker image
+    cmds:
+      - task: package
+      - task: docker:build

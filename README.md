@@ -61,6 +61,38 @@ All options:
 | `--in-queue`           | `dwcdp.download.finished` | Queue to consume from                                   |
 | `--out-queue`          | `dwcdp.validation.result` | Queue to publish results to                             |
 
+## Docker
+
+### Building the image
+
+```bash
+task docker:build
+```
+
+Or with a specific tag:
+
+```bash
+IMAGE=ghcr.io/gbif/dwc-dp-analyser:1.0.0 task docker:build
+```
+
+### Running the image
+
+`ARCHIVE_REPOSITORY` and `UNPACK_REPOSITORY` are required to know where you are mounting from.
+All RabbitMQ options fall back to their defaults if not set.
+
+```bash
+ARCHIVE_REPOSITORY=$HOME/data/archives \
+UNPACK_REPOSITORY=$HOME/data/unpacked \
+RABBIT_HOST=rabbit.test.example.com \
+task docker:run
+```
+
+### Build jar + image in one shot
+
+```bash
+IMAGE=ghcr.io/gbif/dwc-dp-analyser:1.0.0 task dist
+```
+
 ## Message format
 
 ### Inbound — `dwcdp.download.finished`

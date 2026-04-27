@@ -7,6 +7,8 @@ import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import org.gbif.dp.duckdb.DefaultDuckDbConfig;
 
+import org.gbif.dp.duckdb.DuckDbConfig;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,26 +25,23 @@ public class DwcValidator implements Validator {
     AnalysisFeature.FOREIGN_KEY_CONSTRAINT
   );
 
-  private final Path archiveRepository;
-  private final Path unpackRepository;
-
   private final DataPackageAnalyser validator;
+  private final DwcValidatorConfig config;
 
-  public DwcValidator(DataPackageAnalyser validator, Path archiveRepository, Path unpackRepository) {
-    this.archiveRepository = archiveRepository;
-    this.unpackRepository = unpackRepository;
+  public DwcValidator(DataPackageAnalyser validator, DwcValidatorConfig config) {
     this.validator = validator;
+    this.config = config;
   }
 
   @Override
   public DatapackageAnalysisResult validate(ValidationRequest request) throws Exception {
     // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
-    Path zipFile = archiveRepository
+    Path zipFile = config.archiveRepository()
       .resolve(request.datasetUuid())
       .resolve(request.datasetUuid() + "." + request.attempt() + ".dwcdp");
 
     // {unpackRepository}/{datasetUuid}/{datasetUuid}.{attempt}/
-    Path unpackDir = unpackRepository
+    Path unpackDir = config.unpackRepository()
       .resolve(request.datasetUuid())
       .resolve(request.datasetUuid() + "." + request.attempt());
 
@@ -50,5 +49,17 @@ public class DwcValidator implements Validator {
     ZipUtils.unzip(zipFile, unpackDir);
 
     return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
+  }
+
+  public record DwcValidatorConfig(Path archiveRepository, Path unpackRepository, ValidationOptions validationOptions) {
+
+    public static ValidationOptions withDuckDbConfig(DuckDbConfig config) {
+      ValidationOptions defaultOptions = ValidationOptions.defaults();
+      return new ValidationOptions(
+        defaultOptions.sampleSize(),
+        defaultOptions.jdbcUrl(),
+        config
+      );
+    }
   }
 }
