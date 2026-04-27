@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -40,9 +41,7 @@ public class InMemoryMessageBus implements MessageConsumer, MessagePublisher {
 
   public CountDownLatch enqueueAndLatch(byte[]... messages) {
     latch = new CountDownLatch(messages.length);
-    for (byte[] message : messages) {
-      queue.add(message);
-    }
+    Collections.addAll(queue, messages);
     return latch;
   }
 

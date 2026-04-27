@@ -9,7 +9,7 @@ import java.io.IOException;
 
 public class RabbitMessageConsumer implements MessageConsumer {
 
-  private Logger log = LoggerFactory.getLogger(RabbitMessageConsumer.class);
+  private static final Logger log = LoggerFactory.getLogger(RabbitMessageConsumer.class);
 
   private final Channel channel;
   private final String queue;

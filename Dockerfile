@@ -1,11 +1,11 @@
 # Build stage
-FROM maven:3.9-eclipse-temurin-17 AS build
+FROM third-party/maven:3-eclipse-temurin-17 AS build
 WORKDIR /build
 COPY . .
 RUN --mount=type=cache,target=/root/.m2 mvn -U verify
 
 # Run stage
-FROM eclipse-temurin:17-jre-jammy
+FROM third-party/eclipse-temurin:17-jre
 LABEL authors="gbif"
 
 RUN useradd -r -s /bin/false stackable

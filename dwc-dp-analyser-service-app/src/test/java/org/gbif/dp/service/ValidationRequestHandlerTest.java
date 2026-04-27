@@ -2,7 +2,6 @@ package org.gbif.dp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.service.api.DwcDpValidationFinished;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +53,9 @@ class ValidationRequestHandlerTest {
 
   @Test
   void handle_validatorThrows_propagatesException() {
-    Validator validator = req -> { throw new RuntimeException("validation exploded"); };
+    Validator validator = req -> {
+      throw new RuntimeException("validation exploded");
+    };
     ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher);
 
     assertThrows(Exception.class, () -> handler.handle(REQUEST, MSG_ID));
