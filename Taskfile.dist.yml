@@ -26,6 +26,19 @@ tasks:
     cmds:
       - '{{.CONTAINER_CLI}} build -t {{.IMAGE}} .'
 
+  docker:push:
+    desc: Push Docker image to registry (reads version from pom.xml)
+    prompt: Do you want to push the image to the registry?
+    requires:
+      vars: [REGISTRY]
+    vars:
+      POM_VERSION:
+        sh: mvn help:evaluate -Dexpression=project.version -q -DforceStdout
+      FULL_IMAGE: '{{.REGISTRY}}/dwc-dp-analyser-service:{{.POM_VERSION}}'
+    cmds:
+      - '{{.CONTAINER_CLI}} tag {{.IMAGE}} {{.FULL_IMAGE}}'
+      - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}'
+
   docker:run:
     desc: Run the Docker image
     requires:
@@ -39,8 +52,9 @@ tasks:
         -e RABBIT_USER={{.RABBIT_USER | default "guest"}}
         -e RABBIT_PASSWORD={{.RABBIT_PASSWORD | default "guest"}}
         -e RABBIT_VHOST={{.RABBIT_VHOST | default "/"}}
-        -e IN_QUEUE={{.IN_QUEUE | default "dwcdp.download.finished"}}
-        -e OUT_QUEUE={{.OUT_QUEUE | default "dwcdp.validation.result"}}
+        -e INPUT_QUEUE={{.INPUT_QUEUE | default "dwcdp-validator"}}
+        -e OUTPUT_EXCHANGE={{.OUTPUT_EXCHANGE | default "crawler"}}
+        -e OUTPUT_ROUTING_KEY={{.OUTPUT_ROUTING_KEY | default "crawl.dwcdp.validation.finished"}}
         {{.IMAGE}}'
 
   docker:run:local:
@@ -67,3 +81,4 @@ tasks:
     cmds:
       - task: package
       - task: docker:build
+      - task: docker:push
