@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: dwc-dp-analyser
+spec:
+  type: ClusterIP
+  selector:
+    app: dwc-dp-analyser
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP

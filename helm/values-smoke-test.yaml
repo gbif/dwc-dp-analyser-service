@@ -1,0 +1,14 @@
+# One-off smoke test values — spins up a local RabbitMQ to verify the app
+# starts and connects successfully. Not intended for any persistent environment.
+# Usage: helm upgrade --install dwc-dp-analyser ./helm -f helm/values-smoke-test.yaml
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: guest
+    password: guest
+
+rabbit:
+  host: localhost
+  createSecret: true
+  credentialsSecret: dwc-dp-analyser-rabbitmq-credentials-smoke-test

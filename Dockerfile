@@ -19,15 +19,13 @@ ENV RABBIT_HOST=localhost \
     RABBIT_PASSWORD=guest \
     RABBIT_VHOST=/ \
     IN_QUEUE=dwcdp.download.finished \
-    OUT_QUEUE=dwcdp.validation.result
+    OUT_QUEUE=dwcdp.validation.result \
+    JVM_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx2g"
 
 USER stackable
 
 ENTRYPOINT ["sh", "-c", "exec java \
-  -XX:+UseContainerSupport \
-  -XX:MaxRAMPercentage=75.0 \
-  -Xms256m \
-  -Xmx2g \
+  ${JVM_OPTIONS} \
   -jar /app/service.jar \
   --archive-repository /data/datapackages \
   --unpack-repository /data/datapackages-unpacked \

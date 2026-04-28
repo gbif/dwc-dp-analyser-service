@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dwc-dp-analyser
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: dwc-dp-analyser
+  template:
+    metadata:
+      labels:
+        app: dwc-dp-analyser
+    spec:
+      initContainers:
+        - name: wait-for-rabbitmq
+          image: busybox
+          command: ['sh', '-c', 'for i in 1 2 3; do nc -z {{ .Values.rabbit.host }} {{ .Values.rabbit.port }} && exit 0 || sleep 5; done; exit 1']
+      containers:
+        - name: dwc-dp-analyser
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: JVM_OPTIONS
+              value: {{ .Values.jvmOptions | quote }}
+            - name: RABBIT_HOST
+              value: {{ .Values.rabbit.host | quote }}
+            - name: RABBIT_PORT
+              value: {{ .Values.rabbit.port | quote }}
+            - name: RABBIT_VHOST
+              value: {{ .Values.rabbit.vhost | quote }}
+            - name: IN_QUEUE
+              value: {{ .Values.rabbit.inQueue | quote }}
+            - name: OUT_QUEUE
+              value: {{ .Values.rabbit.outQueue | quote }}
+            - name: RABBIT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rabbit.credentialsSecret }}
+                  key: username
+            - name: RABBIT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.rabbit.credentialsSecret }}
+                  key: password
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            # Readyness-check on rabbitMQ
+            exec:
+              command: ["pgrep", "-f", "service.jar"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 1
+          volumeMounts:
+            - name: incoming
+              mountPath: /data/datapackages
+              readOnly: true
+              # Impherial mount
+            - name: workdir
+              mountPath: /data/datapackages-unpacked
+          resources:
+            {{ toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: incoming
+          {{ toYaml .Values.volumes.incoming | nindent 10 }}
+        - name: workdir
+          {{ toYaml .Values.volumes.workdir | nindent 10 }}

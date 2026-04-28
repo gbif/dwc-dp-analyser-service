@@ -1,0 +1,40 @@
+replicaCount: 1
+
+image:
+  repository: my-registry/dwc-dp-analyser
+  tag: latest
+  pullPolicy: IfNotPresent
+
+jvmOptions: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx2g"
+
+rabbit:
+  host: localhost
+  port: 5672
+  vhost: /
+  inQueue: dwcdp.download.finished
+  outQueue: dwcdp.validation.result
+  username: guest
+  password: guest
+  createSecret: false
+  credentialsSecret: dwc-dp-analyser-rabbitmq-credentials
+
+volumes:
+  # Volume backing for the two mount points the app requires.
+  # Accepts any Kubernetes volume type (nfs, persistentVolumeClaim, emptyDir, etc.)
+  # Override in environment values to match your infrastructure.
+  # See: https://kubernetes.io/docs/concepts/storage/volumes/#volume-types
+  incoming:
+    emptyDir: {}
+  workdir:
+    emptyDir: {}
+
+service:
+  port: 8080
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: 250m
+  limits:
+    memory: 3Gi
+    cpu: 2000m
