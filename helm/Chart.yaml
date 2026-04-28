@@ -4,8 +4,3 @@ description: DwC-DP archive validator and analyser service
 type: application
 version: 0.1.0
 appVersion: "1.0.0"
-dependencies:
-  - name: rabbitmq
-    version: "14.x.x"
-    repository: "https://charts.bitnami.com/bitnami"
-    condition: rabbitmq.enabled
