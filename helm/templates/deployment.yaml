@@ -29,10 +29,12 @@ spec:
               value: {{ .Values.rabbit.port | quote }}
             - name: RABBIT_VHOST
               value: {{ .Values.rabbit.vhost | quote }}
-            - name: IN_QUEUE
-              value: {{ .Values.rabbit.inQueue | quote }}
-            - name: OUT_QUEUE
-              value: {{ .Values.rabbit.outQueue | quote }}
+            - name: INPUT_QUEUE
+              value: {{ .Values.rabbit.inputQueue | quote }}
+            - name: OUTPUT_EXCHANGE
+              value: {{ .Values.rabbit.outputExchange | quote }}
+            - name: OUTPUT_ROUTING_KEY
+              value: {{ .Values.rabbit.outputRoutingKey | quote }}
             - name: RABBIT_USER
               valueFrom:
                 secretKeyRef:

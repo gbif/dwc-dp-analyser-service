@@ -40,13 +40,17 @@ public class Config {
       description = "RabbitMQ virtual host (default: ${DEFAULT-VALUE})")
     public String vhost;
 
-    @Option(names = "--in-queue", defaultValue = "dwcdp.download.finished",
+    @Option(names = "--input-queue", defaultValue = "dwcdp.download.finished",
       description = "Queue to consume from (default: ${DEFAULT-VALUE})")
-    public String inQueue;
+    public String inputQueue;
 
-    @Option(names = "--out-queue", defaultValue = "dwcdp.validation.result",
-      description = "Queue to publish results to (default: ${DEFAULT-VALUE})")
-    public String outQueue;
+    @Option(names = "--output-exchange", defaultValue = "crawler",
+      description = "Exchange to publish results to (default: ${DEFAULT-VALUE})")
+    public String outputExchange;
+
+    @Option(names = "--output-routing-key", defaultValue = "crawl.dwcdp.validation.finished",
+      description = "Routing key to publish results to (default: ${DEFAULT-VALUE})")
+    public String outputRoutingKey;
   }
 
   @CommandLine.ArgGroup(exclusive = false, heading = "RabbitMQ options:%n")

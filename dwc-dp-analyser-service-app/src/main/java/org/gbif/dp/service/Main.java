@@ -2,6 +2,9 @@ package org.gbif.dp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import com.rabbitmq.client.BuiltinExchangeType;
+import com.rabbitmq.client.Channel;
+
 import org.gbif.dp.analysis.DataPackageAnalyser;
 import org.gbif.dp.analysis.DuckDbDataPackageAnalyser;
 import org.gbif.dp.descriptor.JacksonDataPackageParser;
@@ -30,8 +33,9 @@ public class Main {
 
   private static void run(Config config) throws Exception {
     try (RabbitMqConnection rabbit = new RabbitMqConnection(config.rabbitMq)) {
-      rabbit.channel().queueDeclare(config.rabbitMq.inQueue, true, false, false, null);
-      rabbit.channel().queueDeclare(config.rabbitMq.outQueue, true, false, false, null);
+      Channel channel = rabbit.channel();
+      channel.queueDeclare(config.rabbitMq.inputQueue, true, false, false, null);
+      channel.exchangeDeclare(config.rabbitMq.outputExchange, BuiltinExchangeType.TOPIC);
 
       ObjectMapper mapper = new ObjectMapper();
 
@@ -46,13 +50,13 @@ public class Main {
       DwcValidator validator = new DwcValidator(analyser, validatorConfig);
 
       ValidationFinishedPublisher publisher = new ValidationFinishedPublisher(
-        new RabbitMessagePublisher(rabbit.channel(), "", config.rabbitMq.outQueue),
+        new RabbitMessagePublisher(channel, config.rabbitMq.outputExchange, config.rabbitMq.outputRoutingKey),
         mapper);
 
       ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher);
 
       DownloadFinishConsumer consumer = new DownloadFinishConsumer(
-        new RabbitMessageConsumer(rabbit.channel(), config.rabbitMq.inQueue),
+        new RabbitMessageConsumer(channel, config.rabbitMq.inputQueue),
         mapper,
         handler);
 

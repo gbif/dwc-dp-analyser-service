@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: my-registry/dwc-dp-analyser
+  repository: dwc-dp-analyser-service
   tag: latest
   pullPolicy: IfNotPresent
 
@@ -11,8 +11,9 @@ rabbit:
   host: localhost
   port: 5672
   vhost: /
-  inQueue: dwcdp.download.finished
-  outQueue: dwcdp.validation.result
+  inputQueue: dwcdp.validator
+  outputExchange: crawler
+  outputRoutingKey: crawl.dwcdp.validation.finished
   username: guest
   password: guest
   createSecret: false
@@ -35,6 +36,7 @@ resources:
   requests:
     memory: 512Mi
     cpu: 250m
+    ephemeral-storage: 20Gi
   limits:
     memory: 3Gi
     cpu: 2000m

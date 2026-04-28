@@ -18,8 +18,9 @@ ENV RABBIT_HOST=localhost \
     RABBIT_USER=guest \
     RABBIT_PASSWORD=guest \
     RABBIT_VHOST=/ \
-    IN_QUEUE=dwcdp.download.finished \
-    OUT_QUEUE=dwcdp.validation.result \
+    INPUT_QUEUE=dwcdp-validator \
+    OUTPUT_EXCHANGE=crawler \
+    OUTPUT_ROUTING_KEY=crawl.dwcdp.validation.finished \
     JVM_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx2g"
 
 USER stackable
@@ -34,5 +35,6 @@ ENTRYPOINT ["sh", "-c", "exec java \
   --rabbit-user ${RABBIT_USER} \
   --rabbit-password ${RABBIT_PASSWORD} \
   --rabbit-vhost ${RABBIT_VHOST} \
-  --in-queue ${IN_QUEUE} \
-  --out-queue ${OUT_QUEUE}"]
+  --input-queue ${INPUT_QUEUE} \
+  --output-exchange ${OUTPUT_EXCHANGE} \
+  --output-routing-key ${OUTPUT_ROUTING_KEY}"]
