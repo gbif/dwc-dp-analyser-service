@@ -18,7 +18,7 @@ spec:
           command: ['sh', '-c', 'for i in 1 2 3; do nc -z {{ .Values.rabbit.host }} {{ .Values.rabbit.port }} && exit 0 || sleep 5; done; exit 1']
       containers:
         - name: dwc-dp-analyser
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}/{{ .Values.image.name }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: JVM_OPTIONS
@@ -66,7 +66,12 @@ spec:
           resources:
             {{ toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: incoming
-          {{ toYaml .Values.volumes.incoming | nindent 10 }}
-        - name: workdir
-          {{ toYaml .Values.volumes.workdir | nindent 10 }}
+      {{- range $name, $config := .Values.volumes }}
+        - name: {{ $name }}
+        {{- if dig "nfs" nil $config }}
+          nfs:
+            {{- toYaml $config.nfs | nindent 12 }}
+        {{- else }}
+          emptyDir: {}
+        {{- end }}
+      {{- end }}

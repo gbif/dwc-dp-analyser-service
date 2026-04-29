@@ -1,9 +1,11 @@
 replicaCount: 1
 
 image:
-  repository: dwc-dp-analyser-service
+  # Replace repository with actual repository value
+  repository: docker.io
+  name: dwc-dp-analyser-service
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 jvmOptions: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx2g"
 

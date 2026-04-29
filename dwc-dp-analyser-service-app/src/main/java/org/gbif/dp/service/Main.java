@@ -35,7 +35,7 @@ public class Main {
     try (RabbitMqConnection rabbit = new RabbitMqConnection(config.rabbitMq)) {
       Channel channel = rabbit.channel();
       channel.queueDeclare(config.rabbitMq.inputQueue, true, false, false, null);
-      channel.exchangeDeclare(config.rabbitMq.outputExchange, BuiltinExchangeType.TOPIC);
+      channel.exchangeDeclare(config.rabbitMq.outputExchange, BuiltinExchangeType.TOPIC, true);
 
       ObjectMapper mapper = new ObjectMapper();
 

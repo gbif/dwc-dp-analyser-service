@@ -26,9 +26,9 @@ tasks:
     cmds:
       - '{{.CONTAINER_CLI}} build -t {{.IMAGE}} .'
 
-  docker:push:
-    desc: Push Docker image to registry (reads version from pom.xml)
-    prompt: Do you want to push the image to the registry?
+  docker:push:dist:
+    desc: Build and push multi-arch Docker image (reads version from pom.xml)
+    prompt: Do you want to build and push the multi-arch image to the registry?
     requires:
       vars: [REGISTRY]
     vars:
@@ -36,8 +36,15 @@ tasks:
         sh: mvn help:evaluate -Dexpression=project.version -q -DforceStdout
       FULL_IMAGE: '{{.REGISTRY}}/dwc-dp-analyser-service:{{.POM_VERSION}}'
     cmds:
-      - '{{.CONTAINER_CLI}} tag {{.IMAGE}} {{.FULL_IMAGE}}'
-      - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}'
+      - '{{.CONTAINER_CLI}} build --platform linux/amd64 -t {{.FULL_IMAGE}}-amd64 .'
+      - '{{.CONTAINER_CLI}} build --platform linux/arm64 -t {{.FULL_IMAGE}}-arm64 .'
+      - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
+      - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-arm64'
+      - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}}'
+      - '{{.CONTAINER_CLI}} manifest create {{.FULL_IMAGE}}'
+      - '{{.CONTAINER_CLI}} manifest add {{.FULL_IMAGE}} {{.FULL_IMAGE}}-amd64'
+      - '{{.CONTAINER_CLI}} manifest add {{.FULL_IMAGE}} {{.FULL_IMAGE}}-arm64'
+      - '{{.CONTAINER_CLI}} manifest push {{.FULL_IMAGE}}'
 
   docker:run:
     desc: Run the Docker image
@@ -80,5 +87,4 @@ tasks:
     desc: Build jar and Docker image
     cmds:
       - task: package
-      - task: docker:build
-      - task: docker:push
+      - task: docker:push:dist
