@@ -48,12 +48,12 @@ class DownloadFinishConsumerTest {
 
     assertEquals(0, inbound.queued(), "Message should be acked and removed");
     assertEquals(1, outbound.published().size(), "Expected one published result");
-    assertEquals(0, inbound.deadLetterQueue().size());
 
     DwcDpValidationFinished published = MAPPER.readValue(
       outbound.published().get(0), DwcDpValidationFinished.class);
     assertEquals("uuid-1", published.datasetUuid());
     assertEquals(1, published.attempt());
+    assertTrue(published.valid());
   }
 
   @Test
@@ -65,8 +65,11 @@ class DownloadFinishConsumerTest {
     await(latch);
 
     assertEquals(0, inbound.queued());
-    assertEquals(0, outbound.published().size(), "Expected no published result for invalid");
-    assertEquals(0, inbound.deadLetterQueue().size());
+    assertEquals(1, outbound.published().size());
+
+    DwcDpValidationFinished published = MAPPER.readValue(
+      outbound.published().get(0), DwcDpValidationFinished.class);
+    assertFalse(published.valid());
   }
 
   @Test
@@ -78,8 +81,7 @@ class DownloadFinishConsumerTest {
     await(latch);
 
     assertEquals(0, inbound.queued());
-    assertEquals(0, outbound.published().size(), "Expected no published result on failure");
-    assertEquals(1, inbound.deadLetterQueue().size());
+    assertEquals(0, outbound.published().size());
   }
 
   @Test
@@ -91,8 +93,7 @@ class DownloadFinishConsumerTest {
     await(latch);
 
     assertEquals(0, inbound.queued());
-    assertEquals(0, outbound.published().size());
-    assertEquals(1, inbound.deadLetterQueue().size());
+    assertEquals(1, outbound.published().size());
   }
 
   // Minimal message shape matching what the consumer deserializes

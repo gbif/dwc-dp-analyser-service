@@ -1,5 +1,6 @@
 package org.gbif.dp.service.messaging;
 
+import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
@@ -24,6 +25,12 @@ public class RabbitMqConnection implements AutoCloseable {
     connection = factory.newConnection();
     channel = connection.createChannel();
     channel.basicQos(1); // one message at a time
+    declareTopology(channel, cfg);
+  }
+
+  private void declareTopology(Channel channel, Config.RabbitMq cfg) throws IOException {
+    channel.queueDeclare(cfg.inputQueue, true, false, false, null);
+    channel.exchangeDeclare(cfg.outputExchange, BuiltinExchangeType.TOPIC, true);
   }
 
   public Channel channel() {
