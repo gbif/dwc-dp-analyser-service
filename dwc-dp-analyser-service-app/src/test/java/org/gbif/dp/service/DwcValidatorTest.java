@@ -52,7 +52,7 @@ class DwcValidatorTest {
 
     DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
 
-    assertTrue(result.isValid());
+    assertTrue(DatapackageAnalysisResult.isValid(result));
 
     // Verify analyser received the expected unpack directory
     Path expectedUnpackDir = unpackRepository.resolve(DATASET_UUID).resolve(DATASET_UUID + "." + ATTEMPT);

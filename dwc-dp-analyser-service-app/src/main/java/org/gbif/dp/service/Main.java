@@ -2,7 +2,6 @@ package org.gbif.dp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;
 
 import org.gbif.dp.analysis.DataPackageAnalyser;
@@ -11,10 +10,10 @@ import org.gbif.dp.descriptor.JacksonDataPackageParser;
 import org.gbif.dp.duckdb.CustomDuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbResourceLoader;
-import org.gbif.dp.service.messaging.RabbitMessageConsumer;
-import org.gbif.dp.service.messaging.RabbitMessagePublisher;
+import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
+import org.gbif.dp.service.messaging.rabbitmq.RabbitMessagePublisher;
 
-import org.gbif.dp.service.messaging.RabbitMqConnection;
+import org.gbif.dp.service.messaging.rabbitmq.RabbitMqConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +33,6 @@ public class Main {
   private static void run(Config config) throws Exception {
     try (RabbitMqConnection rabbit = new RabbitMqConnection(config.rabbitMq)) {
       Channel channel = rabbit.channel();
-      channel.queueDeclare(config.rabbitMq.inputQueue, true, false, false, null);
-      channel.exchangeDeclare(config.rabbitMq.outputExchange, BuiltinExchangeType.TOPIC, true);
 
       ObjectMapper mapper = new ObjectMapper();
 
@@ -55,7 +52,7 @@ public class Main {
 
       ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher);
 
-      DownloadFinishConsumer consumer = new DownloadFinishConsumer(
+      ValidationConsumer consumer = new ValidationConsumer(
         new RabbitMessageConsumer(channel, config.rabbitMq.inputQueue),
         mapper,
         handler);

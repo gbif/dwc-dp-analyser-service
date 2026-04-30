@@ -1,7 +1,10 @@
-package org.gbif.dp.service.messaging;
+package org.gbif.dp.service.messaging.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 
+import org.gbif.dp.service.messaging.Ack;
+import org.gbif.dp.service.messaging.MessageConsumer;
+import org.gbif.dp.service.messaging.MessageHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

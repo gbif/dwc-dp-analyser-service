@@ -27,11 +27,14 @@ public class ValidationRequestHandler {
       messageId, request.datasetUuid(), request.attempt());
 
     DatapackageAnalysisResult result = validator.validate(request);
-    boolean valid = result.isValid();
+    boolean valid = DatapackageAnalysisResult.isValid(result);
 
-    if (valid) {
-      publisher.publish(new DwcDpValidationFinished(request.datasetUuid(), request.attempt()));
-    }
+    publisher.publish(new DwcDpValidationFinished(
+      request.datasetUuid(),
+      request.attempt(),
+      valid,
+      result
+      ));
 
     log.info("Processed dataset: [{}], attempt: [{}], valid: [{}]",
       request.datasetUuid(), request.attempt(), valid);

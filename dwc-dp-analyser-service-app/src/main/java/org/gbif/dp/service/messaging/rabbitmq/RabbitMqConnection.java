@@ -1,4 +1,4 @@
-package org.gbif.dp.service.messaging;
+package org.gbif.dp.service.messaging.rabbitmq;
 
 import com.rabbitmq.client.BuiltinExchangeType;
 import com.rabbitmq.client.Channel;

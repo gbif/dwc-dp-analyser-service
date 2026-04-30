@@ -48,7 +48,8 @@ class ValidationRequestHandlerTest {
 
     handler.handle(REQUEST, MSG_ID);
 
-    assertNull(capturedPublish.get(), "Expected no message to be published for invalid result");
+    DwcDpValidationFinished dwcDpValidationFinished = capturedPublish.get();
+    assertFalse(dwcDpValidationFinished.valid());
   }
 
   @Test

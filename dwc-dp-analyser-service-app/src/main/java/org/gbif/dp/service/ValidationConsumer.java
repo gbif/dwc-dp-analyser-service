@@ -8,16 +8,16 @@ import org.gbif.dp.service.messaging.MessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DownloadFinishConsumer {
+public class ValidationConsumer {
 
-  private static final Logger log = LoggerFactory.getLogger(DownloadFinishConsumer.class);
+  private static final Logger log = LoggerFactory.getLogger(ValidationConsumer.class);
 
   private final MessageConsumer consumer;
   private final ObjectMapper mapper;
   private final ValidationRequestHandler handler;
 
-  public DownloadFinishConsumer(MessageConsumer consumer, ObjectMapper mapper,
-                                ValidationRequestHandler handler) {
+  public ValidationConsumer(MessageConsumer consumer, ObjectMapper mapper,
+                            ValidationRequestHandler handler) {
     this.consumer = consumer;
     this.mapper = mapper;
     this.handler = handler;
@@ -37,6 +37,7 @@ public class DownloadFinishConsumer {
 
         ack.ack();
       } catch (Exception e) {
+        // TODO how to handle system errors
         log.error("Failed to process msgId: [{}], dataset: [{}]", messageId, datasetUuid, e);
         ack.nack();
       }

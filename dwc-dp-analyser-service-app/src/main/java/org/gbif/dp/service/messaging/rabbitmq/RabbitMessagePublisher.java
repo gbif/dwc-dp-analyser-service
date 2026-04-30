@@ -1,6 +1,7 @@
-package org.gbif.dp.service.messaging;
+package org.gbif.dp.service.messaging.rabbitmq;
 
 import com.rabbitmq.client.Channel;
+import org.gbif.dp.service.messaging.MessagePublisher;
 
 import java.io.IOException;
 

@@ -13,7 +13,7 @@ rabbit:
   host: localhost
   port: 5672
   vhost: /
-  inputQueue: dwcdp.validator
+  inputQueue: dwcdp-validator
   outputExchange: crawler
   outputRoutingKey: crawl.dwcdp.validation.finished
   username: guest

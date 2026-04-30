@@ -13,14 +13,14 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DownloadFinishConsumerTest {
+class ValidationConsumerTest {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
   private static final long TIMEOUT_SECONDS = 2;
 
   private InMemoryMessageBus inbound;
   private InMemoryMessageBus outbound;
-  private DownloadFinishConsumer consumer;
+  private ValidationConsumer consumer;
 
   @BeforeEach
   void setUp() {
@@ -28,10 +28,10 @@ class DownloadFinishConsumerTest {
     outbound = new InMemoryMessageBus();
   }
 
-  private DownloadFinishConsumer consumerWith(Validator validator) {
+  private ValidationConsumer consumerWith(Validator validator) {
     ValidationFinishedPublisher publisher = new ValidationFinishedPublisher(outbound, MAPPER);
     ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher);
-    return new DownloadFinishConsumer(inbound, MAPPER, handler);
+    return new ValidationConsumer(inbound, MAPPER, handler);
   }
 
   private static void await(CountDownLatch latch) throws InterruptedException {
@@ -93,7 +93,7 @@ class DownloadFinishConsumerTest {
     await(latch);
 
     assertEquals(0, inbound.queued());
-    assertEquals(1, outbound.published().size());
+    assertEquals(0, outbound.published().size());
   }
 
   // Minimal message shape matching what the consumer deserializes
