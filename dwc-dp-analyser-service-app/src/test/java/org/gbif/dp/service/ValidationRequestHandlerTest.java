@@ -37,8 +37,8 @@ class ValidationRequestHandlerTest {
 
     DwcDpValidationFinished published = capturedPublish.get();
     assertNotNull(published, "Expected a message to be published");
-    assertEquals(REQUEST.datasetUuid(), published.datasetUuid());
-    assertEquals(REQUEST.attempt(), published.attempt());
+    assertEquals(REQUEST.datasetUuid(), published.getDatasetUuid());
+    assertEquals(REQUEST.attempt(), published.getAttempt());
   }
 
   @Test
@@ -49,7 +49,7 @@ class ValidationRequestHandlerTest {
     handler.handle(REQUEST, MSG_ID);
 
     DwcDpValidationFinished dwcDpValidationFinished = capturedPublish.get();
-    assertFalse(dwcDpValidationFinished.valid());
+    assertFalse(dwcDpValidationFinished.isValid());
   }
 
   @Test

@@ -51,9 +51,9 @@ class ValidationConsumerTest {
 
     DwcDpValidationFinished published = MAPPER.readValue(
       outbound.published().get(0), DwcDpValidationFinished.class);
-    assertEquals("uuid-1", published.datasetUuid());
-    assertEquals(1, published.attempt());
-    assertTrue(published.valid());
+    assertEquals("uuid-1", published.getDatasetUuid());
+    assertEquals(1, published.getAttempt());
+    assertTrue(published.isValid());
   }
 
   @Test
@@ -69,7 +69,7 @@ class ValidationConsumerTest {
 
     DwcDpValidationFinished published = MAPPER.readValue(
       outbound.published().get(0), DwcDpValidationFinished.class);
-    assertFalse(published.valid());
+    assertFalse(published.isValid());
   }
 
   @Test

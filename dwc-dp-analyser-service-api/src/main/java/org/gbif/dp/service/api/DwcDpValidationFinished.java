@@ -1,5 +1,8 @@
 package org.gbif.dp.service.api;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import java.util.Objects;
@@ -10,11 +13,12 @@ public class DwcDpValidationFinished {
   private final Boolean valid;
   private final DatapackageAnalysisResult validationReport;
 
+  @JsonCreator
   public DwcDpValidationFinished(
-    String datasetUuid,
-    int attempt,
-    Boolean valid,
-    DatapackageAnalysisResult validationReport
+    @JsonProperty("datasetUuid")    String datasetUuid,
+    @JsonProperty("attempt")        int attempt,
+    @JsonProperty("valid")          Boolean valid,
+    @JsonProperty("validationReport") DatapackageAnalysisResult validationReport
   ) {
     this.datasetUuid = datasetUuid;
     this.attempt = attempt;
@@ -22,19 +26,19 @@ public class DwcDpValidationFinished {
     this.validationReport = validationReport;
   }
 
-  public String datasetUuid() {
+  public String getDatasetUuid() {
     return datasetUuid;
   }
 
-  public int attempt() {
+  public int getAttempt() {
     return attempt;
   }
 
-  public Boolean valid() {
+  public Boolean isValid() {
     return valid;
   }
 
-  public DatapackageAnalysisResult validationReport() {
+  public DatapackageAnalysisResult getValidationReport() {
     return validationReport;
   }
 
