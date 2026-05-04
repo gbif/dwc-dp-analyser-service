@@ -21,7 +21,7 @@
     <dependency>
       <groupId>org.gbif</groupId>
       <artifactId>dwc-dp-analyser-lib</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
+      <version>${dwc-dp-analyser.version}</version>
     </dependency>
     <dependency>
       <groupId>org.gbif</groupId>
@@ -31,22 +31,22 @@
     <dependency>
       <groupId>info.picocli</groupId>
       <artifactId>picocli</artifactId>
-      <version>4.7.6</version>
+      <version>${picocli.version}</version>
     </dependency>
     <dependency>
       <groupId>com.rabbitmq</groupId>
       <artifactId>amqp-client</artifactId>
-      <version>5.25.0</version>
+      <version>${amqp-client.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
-      <version>2.0.17</version>
+      <version>${slf4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
-      <version>5.11.4</version>
+      <version>${junit-jupiter.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

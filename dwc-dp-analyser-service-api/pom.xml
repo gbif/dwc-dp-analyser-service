@@ -21,12 +21,12 @@
     <dependency>
       <groupId>org.gbif</groupId>
       <artifactId>dwc-dp-analyser-api</artifactId>
-      <version>0.0.2-SNAPSHOT</version>
+      <version>${dwc-dp-analyser.version}</version>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
-      <version>2.19.4</version>
+      <version>${jackson.version}</version>
     </dependency>
   </dependencies>
 </project>
