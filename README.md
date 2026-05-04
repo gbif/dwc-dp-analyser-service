@@ -1,20 +1,20 @@
 # DarwinCore Datapackage Analyser Service
 
 A lightweight service that consumes Darwin Core Data Package (DwC-DP) download
-events from RabbitMQ, validates the archive, and publishes a message if valid
+events from RabbitMQ, validates the archive, and publishes a result message.
 
 ## Overview
 
 ```
-RabbitMQ [dwcdp.download.finished]
+RabbitMQ [dwcdp-validator]
   → unzip archive from disk
   → validate with DwcDpPackageAnalyser
-  → RabbitMQ [dwcdp.validation.result]
+  → RabbitMQ [crawler / crawl.dwcdp.validation.finished]
 ```
 
-The service is triggered by a `DwcDpDownloadFinishedMessage` published by the GBIF crawler after
-a successful archive download. It resolves the zip, unpacks it, runs validation,
-and emits a result message.
+The service is triggered by a message (typically published by the GBIF crawler after
+a successful archive download). It resolves the zip, unpacks it, runs validation,
+and emits a result message regardless of whether validation passed or failed.
 
 ## Requirements
 
@@ -30,36 +30,38 @@ mvn package
 
 **Produces 2 packages:**
 
-- Api (model for publish model) at `dwc-dp-analyser-service-api/target/dwc-dp-analyser-service-api-0.0.1-SNAPSHOT.jar`
-- Fat jar for service at `dwc-dp-analyser-service-app/target/dwc-dp-analyser-service-app-0.0.1-SNAPSHOT-runner.jar`
+- API (publish model) at `dwc-dp-analyser-service-api/target/dwc-dp-analyser-service-api-0.0.2-SNAPSHOT.jar`
+- Fat jar for service at `dwc-dp-analyser-service-app/target/dwc-dp-analyser-service-app-0.0.2-SNAPSHOT-runner.jar`
 
 ## Running
 
 ```bash
-java -jar target/dwcdp-validator-1.0-SNAPSHOT.jar \
+java -jar dwc-dp-analyser-service-app/target/dwc-dp-analyser-service-app-0.0.2-SNAPSHOT-runner.jar \
   --archive-repository /path/to/datapackages \
   --unpack-repository /path/to/datapackages-unpacked \
   --rabbit-host rabbitmq.example.com \
   --rabbit-user guest \
   --rabbit-password guest \
   --rabbit-vhost / \
-  --in-queue dwcdp.download.finished \
-  --out-queue dwcdp.validation.result
+  --input-queue dwcdp-validator \
+  --output-exchange crawler \
+  --output-routing-key crawl.dwcdp.validation.finished
 ```
 
 All options:
 
-| Option                 | Default                   | Description                                             |
-|------------------------|---------------------------|---------------------------------------------------------|
-| `--archive-repository` | *(required)*              | Directory where downloaded zip archives are stored      |
-| `--unpack-repository`  | *(required)*              | Directory where archives are unpacked before validation |
-| `--rabbit-host`        | `localhost`               | RabbitMQ host                                           |
-| `--rabbit-port`        | `5672`                    | RabbitMQ port                                           |
-| `--rabbit-user`        | `guest`                   | RabbitMQ username                                       |
-| `--rabbit-password`    | `guest`                   | RabbitMQ password                                       |
-| `--rabbit-vhost`       | `/`                       | RabbitMQ virtual host                                   |
-| `--in-queue`           | `dwcdp.download.finished` | Queue to consume from                                   |
-| `--out-queue`          | `dwcdp.validation.result` | Queue to publish results to                             |
+| Option                 | Default                           | Description                                             |
+|------------------------|-----------------------------------|---------------------------------------------------------|
+| `--archive-repository` | *(required)*                      | Directory where downloaded zip archives are stored      |
+| `--unpack-repository`  | *(required)*                      | Directory where archives are unpacked before validation |
+| `--rabbit-host`        | `localhost`                       | RabbitMQ host                                           |
+| `--rabbit-port`        | `5672`                            | RabbitMQ port                                           |
+| `--rabbit-user`        | `guest`                           | RabbitMQ username                                       |
+| `--rabbit-password`    | `guest`                           | RabbitMQ password                                       |
+| `--rabbit-vhost`       | `/`                               | RabbitMQ virtual host                                   |
+| `--input-queue`        | `dwcdp.download.finished`         | Queue to consume from                                   |
+| `--output-exchange`    | `crawler`                         | Exchange to publish results to                          |
+| `--output-routing-key` | `crawl.dwcdp.validation.finished` | Routing key for published results                       |
 
 ## Docker
 
@@ -72,7 +74,7 @@ task docker:build
 Or with a specific tag:
 
 ```bash
-IMAGE=ghcr.io/gbif/dwc-dp-analyser:1.0.0 task docker:build
+IMAGE=${repo-url}/dwc-dp-analyser:1.0.0 task docker:build
 ```
 
 ### Running the image
@@ -90,23 +92,14 @@ task docker:run
 ### Build jar + image in one shot
 
 ```bash
-IMAGE=ghcr.io/gbif/dwc-dp-analyser:1.0.0 task dist
+IMAGE=${repo-url}/dwc-dp-analyser:1.0.0 task dist
 ```
 
 ## Message format
 
-### Inbound — `dwcdp.download.finished`
+### Inbound — `dwcdp-validator`
 
-_Other formats accepted, as long as `datasetUuid` and `attempt` is present_
-
-```json
-{
-  "datasetUuid": "4fa7b334-ce0d-4e88-aaae-2e0c138d049e",
-  "attempt": 3
-}
-```
-
-### Outbound — `dwcdp.validation.result`
+Other fields are accepted and ignored, as long as `datasetUuid` and `attempt` are present.
 
 ```json
 {
@@ -115,14 +108,27 @@ _Other formats accepted, as long as `datasetUuid` and `attempt` is present_
 }
 ```
 
-Only published if validation passes. Failed validations are logged and the message is nacked to the dead-letter queue.
+### Outbound — `crawler / crawl.dwcdp.validation.finished`
+
+Always published after validation completes. Check `valid` to determine the outcome.
+
+```json
+{
+  "datasetUuid": "4fa7b334-ce0d-4e88-aaae-2e0c138d049e",
+  "attempt": 3,
+  "valid": true,
+  "validationReport": {}
+}
+```
+
+If the service cannot process a message (unparseable JSON, unexpected error), it is nacked to the dead-letter queue and no outbound message is published.
 
 ## Archive layout
 
 The service expects archives on disk at:
 
 ```
-{archive-repository}/{datasetUuid}/{datasetUuid}.{attempt}.ddwcdp
+{archive-repository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
 ```
 
 And unpacks to:
@@ -131,7 +137,7 @@ And unpacks to:
 {unpack-repository}/{datasetUuid}/{datasetUuid}.{attempt}/
 ```
 
-### Running tests
+## Running tests
 
 ```bash
 mvn test

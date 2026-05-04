@@ -40,7 +40,7 @@ public class Config {
       description = "RabbitMQ virtual host (default: ${DEFAULT-VALUE})")
     public String vhost;
 
-    @Option(names = "--input-queue", defaultValue = "dwcdp.download.finished",
+    @Option(names = "--input-queue", defaultValue = "dwcdp-validator",
       description = "Queue to consume from (default: ${DEFAULT-VALUE})")
     public String inputQueue;
 
