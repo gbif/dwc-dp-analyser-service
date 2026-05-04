@@ -6,27 +6,33 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import java.util.Objects;
+import java.util.UUID;
 
 public class DwcDpValidationFinished {
-  private final String datasetUuid;
+  private final UUID datasetUuid;
   private final int attempt;
-  private final Boolean valid;
+  private final boolean valid;
   private final DatapackageAnalysisResult validationReport;
 
   @JsonCreator
   public DwcDpValidationFinished(
-    @JsonProperty("datasetUuid")    String datasetUuid,
+    @JsonProperty("datasetUuid") UUID datasetUuid,
     @JsonProperty("attempt")        int attempt,
     @JsonProperty("valid")          Boolean valid,
     @JsonProperty("validationReport") DatapackageAnalysisResult validationReport
   ) {
+    Objects.requireNonNull(datasetUuid, "datasetUuid is null");
+    Objects.requireNonNull(validationReport, "validationReport is null");
+    if (attempt < 1) {
+      throw new IllegalArgumentException("attempt must be >= 1");
+    }
     this.datasetUuid = datasetUuid;
     this.attempt = attempt;
     this.valid = valid;
     this.validationReport = validationReport;
   }
 
-  public String getDatasetUuid() {
+  public UUID getDatasetUuid() {
     return datasetUuid;
   }
 

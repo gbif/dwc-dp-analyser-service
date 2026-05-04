@@ -8,6 +8,7 @@ import org.gbif.dp.service.messaging.InMemoryMessageBus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +41,8 @@ class ValidationConsumerTest {
 
   @Test
   void validMessage_validResult_acksAndPublishes() throws Exception {
-    CountDownLatch latch = inbound.enqueueAndLatch(MAPPER.writeValueAsBytes(new TestMessage("uuid-1", 1)));
+    UUID uuid = UUID.randomUUID();
+    CountDownLatch latch = inbound.enqueueAndLatch(MAPPER.writeValueAsBytes(new TestMessage(uuid, 1)));
     consumer = consumerWith(req -> DatapackageAnalysisTestResults.validResult());
 
     consumer.start();
@@ -51,14 +53,15 @@ class ValidationConsumerTest {
 
     DwcDpValidationFinished published = MAPPER.readValue(
       outbound.published().get(0), DwcDpValidationFinished.class);
-    assertEquals("uuid-1", published.getDatasetUuid());
+    assertEquals(uuid, published.getDatasetUuid());
     assertEquals(1, published.getAttempt());
     assertTrue(published.isValid());
   }
 
   @Test
   void validMessage_invalidResult_acksButDoesNotPublish() throws Exception {
-    CountDownLatch latch = inbound.enqueueAndLatch(MAPPER.writeValueAsBytes(new TestMessage("uuid-2", 2)));
+    UUID uuid = UUID.randomUUID();
+    CountDownLatch latch = inbound.enqueueAndLatch(MAPPER.writeValueAsBytes(new TestMessage(uuid, 2)));
     consumer = consumerWith(req -> DatapackageAnalysisTestResults.invalidResult());
 
     consumer.start();
@@ -74,7 +77,8 @@ class ValidationConsumerTest {
 
   @Test
   void validMessage_validatorThrows_nacksAndDoesNotPublish() throws Exception {
-    CountDownLatch latch = inbound.enqueueAndLatch(MAPPER.writeValueAsBytes(new TestMessage("uuid-3", 3)));
+    UUID uuid = UUID.randomUUID();
+    CountDownLatch latch = inbound.enqueueAndLatch(MAPPER.writeValueAsBytes(new TestMessage(uuid, 3)));
     consumer = consumerWith(req -> { throw new RuntimeException("Processing went wrong"); });
 
     consumer.start();
@@ -97,5 +101,5 @@ class ValidationConsumerTest {
   }
 
   // Minimal message shape matching what the consumer deserializes
-  record TestMessage(String datasetUuid, int attempt) {}
+  record TestMessage(UUID datasetUuid, int attempt) {}
 }

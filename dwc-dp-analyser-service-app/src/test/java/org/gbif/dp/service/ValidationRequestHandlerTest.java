@@ -7,6 +7,7 @@ import org.gbif.dp.service.api.DwcDpValidationFinished;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -14,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ValidationRequestHandlerTest {
 
   private static final String MSG_ID = "test-msg-id";
-  private static final ValidationRequest REQUEST = new ValidationRequest("dataset-uuid-123", 1);
+  private static final ValidationRequest REQUEST = new ValidationRequest(UUID.randomUUID(), 1);
 
   private AtomicReference<DwcDpValidationFinished> capturedPublish;
   private ValidationFinishedPublisher publisher;

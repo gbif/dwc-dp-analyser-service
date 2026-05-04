@@ -5,11 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 
 import org.gbif.dp.analysis.DataPackageAnalyser;
-import org.gbif.dp.analysis.DuckDbDataPackageAnalyser;
+import org.gbif.dp.analysis.duckdb.DuckDbDataPackageAnalyser;
+import org.gbif.dp.analysis.duckdb.DuckDbDialectRenderer;
+import org.gbif.dp.analysis.duckdb.DuckDbResourceLoader;
 import org.gbif.dp.descriptor.JacksonDataPackageParser;
 import org.gbif.dp.duckdb.CustomDuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfig;
-import org.gbif.dp.duckdb.DuckDbResourceLoader;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessagePublisher;
 
@@ -38,7 +39,7 @@ public class Main {
 
       DataPackageAnalyser analyser = new DuckDbDataPackageAnalyser(
         new JacksonDataPackageParser(),
-        new DuckDbResourceLoader());
+        new DuckDbResourceLoader(new DuckDbDialectRenderer()));
 
       DuckDbConfig duckDbConfig = new CustomDuckDbConfig("1 GiB", -1, "", "");
       DwcValidator.DwcValidatorConfig validatorConfig = new DwcValidator.DwcValidatorConfig(

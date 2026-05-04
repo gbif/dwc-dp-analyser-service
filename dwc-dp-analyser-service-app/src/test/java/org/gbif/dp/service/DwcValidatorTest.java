@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,7 +20,7 @@ class DwcValidatorTest {
   @TempDir Path archiveRepository;
   @TempDir Path unpackRepository;
 
-  private static final String DATASET_UUID = "test-dataset-uuid";
+  private static final UUID DATASET_UUID = UUID.randomUUID();
   private static final int ATTEMPT = 1;
   private DwcValidator.DwcValidatorConfig config;
 
@@ -27,7 +28,7 @@ class DwcValidatorTest {
   void setUp() throws Exception {
     // Place the fixture zip at the expected path:
     // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
-    Path datasetDir = archiveRepository.resolve(DATASET_UUID);
+    Path datasetDir = archiveRepository.resolve(DATASET_UUID.toString());
     Files.createDirectories(datasetDir);
     Path zipDest = datasetDir.resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
 
@@ -55,7 +56,7 @@ class DwcValidatorTest {
     assertTrue(DatapackageAnalysisResult.isValid(result));
 
     // Verify analyser received the expected unpack directory
-    Path expectedUnpackDir = unpackRepository.resolve(DATASET_UUID).resolve(DATASET_UUID + "." + ATTEMPT);
+    Path expectedUnpackDir = unpackRepository.resolve(DATASET_UUID.toString()).resolve(DATASET_UUID + "." + ATTEMPT);
     Path dataPackagePath = capturedPath.get();
     assertEquals(expectedUnpackDir, dataPackagePath.getParent());
 
@@ -69,7 +70,8 @@ class DwcValidatorTest {
       config);
 
     // Use a UUID that has no zip on disk
+    UUID anotherUuid = UUID.randomUUID();
     assertThrows(Exception.class,
-      () -> validator.validate(new ValidationRequest("nonexistent-uuid", 99)));
+      () -> validator.validate(new ValidationRequest(anotherUuid, 99)));
   }
 }

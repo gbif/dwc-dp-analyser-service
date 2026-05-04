@@ -1,4 +1,6 @@
 package org.gbif.dp.service;
 
-public record ValidationRequest(String datasetUuid, int attempt) {
+import java.util.UUID;
+
+public record ValidationRequest(UUID datasetUuid, int attempt) {
 }

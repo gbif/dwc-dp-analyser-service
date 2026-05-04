@@ -8,6 +8,8 @@ import org.gbif.dp.service.messaging.MessageConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 public class ValidationConsumer {
 
   private static final Logger log = LoggerFactory.getLogger(ValidationConsumer.class);
@@ -26,11 +28,11 @@ public class ValidationConsumer {
   public void start() throws Exception {
     consumer.consume((body, ack) -> {
       String messageId = null;
-      String datasetUuid = null;
+      UUID datasetUuid = null;
       try {
         JsonNode node = mapper.readTree(body);
         messageId = node.path("messageId").asText(null);
-        datasetUuid = node.get("datasetUuid").asText();
+        datasetUuid = UUID.fromString(node.get("datasetUuid").asText());
         int attempt = node.get("attempt").asInt();
 
         handler.handle(new ValidationRequest(datasetUuid, attempt), messageId);
