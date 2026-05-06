@@ -5,12 +5,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 
 import org.gbif.dp.analysis.DataPackageAnalyser;
+import org.gbif.dp.analysis.DefaultDataPackageAnalysisOrchestrator;
+import org.gbif.dp.analysis.api.DataAnalyser;
+import org.gbif.dp.analysis.api.DataPackageAnalysisOrchestrator;
+import org.gbif.dp.analysis.api.ValidationOptions;
 import org.gbif.dp.analysis.duckdb.DuckDbDataPackageAnalyser;
 import org.gbif.dp.analysis.duckdb.DuckDbDialectRenderer;
 import org.gbif.dp.analysis.duckdb.DuckDbResourceLoader;
 import org.gbif.dp.descriptor.JacksonDataPackageParser;
 import org.gbif.dp.duckdb.CustomDuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfig;
+import org.gbif.dp.duckdb.DuckDbConfigBuilder;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessagePublisher;
 
@@ -37,15 +42,21 @@ public class Main {
 
       ObjectMapper mapper = new ObjectMapper();
 
-      DataPackageAnalyser analyser = new DuckDbDataPackageAnalyser(
+      DuckDbConfig duckDbConfig = DuckDbConfigBuilder.defaults()
+        .dbMemory("1 GiB")
+        .build();
+      DataAnalyser analyser = new DuckDbDataPackageAnalyser(
         new JacksonDataPackageParser(),
-        new DuckDbResourceLoader(new DuckDbDialectRenderer()));
+        new DuckDbResourceLoader(new DuckDbDialectRenderer()),
+        duckDbConfig);
+      DataPackageAnalysisOrchestrator dataPackageAnalysisOrchestrator =
+        new DefaultDataPackageAnalysisOrchestrator(analyser);
 
-      DuckDbConfig duckDbConfig = new CustomDuckDbConfig("1 GiB", -1, "", "");
+
       DwcValidator.DwcValidatorConfig validatorConfig = new DwcValidator.DwcValidatorConfig(
-        config.archiveRepository, config.unpackRepository, DwcValidator.DwcValidatorConfig.withDuckDbConfig(duckDbConfig)
+        config.archiveRepository, config.unpackRepository, ValidationOptions.defaults()
       );
-      DwcValidator validator = new DwcValidator(analyser, validatorConfig);
+      DwcValidator validator = new DwcValidator(dataPackageAnalysisOrchestrator, validatorConfig);
 
       ValidationFinishedPublisher publisher = new ValidationFinishedPublisher(
         new RabbitMessagePublisher(channel, config.rabbitMq.outputExchange, config.rabbitMq.outputRoutingKey),

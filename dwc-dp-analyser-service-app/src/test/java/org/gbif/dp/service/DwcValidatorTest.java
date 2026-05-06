@@ -1,6 +1,6 @@
 package org.gbif.dp.service;
 
-import org.gbif.dp.analysis.ValidationOptions;
+import org.gbif.dp.analysis.api.ValidationOptions;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import org.junit.jupiter.api.BeforeEach;

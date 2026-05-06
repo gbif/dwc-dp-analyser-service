@@ -1,8 +1,8 @@
 package org.gbif.dp.service;
 
-import org.gbif.dp.analysis.AnalysisFeature;
-import org.gbif.dp.analysis.DataPackageAnalyser;
-import org.gbif.dp.analysis.ValidationOptions;
+import org.gbif.dp.analysis.api.AnalysisFeature;
+import org.gbif.dp.analysis.api.DataPackageAnalysisOrchestrator;
+import org.gbif.dp.analysis.api.ValidationOptions;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import org.gbif.dp.duckdb.DuckDbConfig;
@@ -20,13 +20,15 @@ public class DwcValidator implements Validator {
   private static final List<AnalysisFeature> ONLY_VALIDATION = List.of(
     AnalysisFeature.PRIMARY_KEY_UNIQUE,
     AnalysisFeature.DATA_TYPE_CONSTRAINT,
-    AnalysisFeature.FOREIGN_KEY_CONSTRAINT
+    AnalysisFeature.FOREIGN_KEY_CONSTRAINT,
+    AnalysisFeature.EML_VALIDATION,
+    AnalysisFeature.DESCRIPTOR_VALIDATION
   );
 
-  private final DataPackageAnalyser validator;
+  private final DataPackageAnalysisOrchestrator validator;
   private final DwcValidatorConfig config;
 
-  public DwcValidator(DataPackageAnalyser validator, DwcValidatorConfig config) {
+  public DwcValidator(DataPackageAnalysisOrchestrator validator, DwcValidatorConfig config) {
     this.validator = validator;
     this.config = config;
   }
@@ -54,9 +56,7 @@ public class DwcValidator implements Validator {
     public static ValidationOptions withDuckDbConfig(DuckDbConfig config) {
       ValidationOptions defaultOptions = ValidationOptions.defaults();
       return new ValidationOptions(
-        defaultOptions.sampleSize(),
-        defaultOptions.jdbcUrl(),
-        config
+        defaultOptions.sampleSize()
       );
     }
   }
