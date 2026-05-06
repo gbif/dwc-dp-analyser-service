@@ -40,7 +40,7 @@ tasks:
       - '{{.CONTAINER_CLI}} build --platform linux/arm64 -t {{.FULL_IMAGE}}-arm64 .'
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-arm64'
-      - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}}'
+      - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}} || true'
       - '{{.CONTAINER_CLI}} manifest create {{.FULL_IMAGE}}'
       - '{{.CONTAINER_CLI}} manifest add {{.FULL_IMAGE}} {{.FULL_IMAGE}}-amd64'
       - '{{.CONTAINER_CLI}} manifest add {{.FULL_IMAGE}} {{.FULL_IMAGE}}-arm64'
