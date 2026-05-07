@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import com.rabbitmq.client.Channel;
 
-import org.gbif.dp.analysis.DataPackageAnalyser;
 import org.gbif.dp.analysis.DefaultDataPackageAnalysisOrchestrator;
 import org.gbif.dp.analysis.api.DataAnalyser;
 import org.gbif.dp.analysis.api.DataPackageAnalysisOrchestrator;
@@ -13,7 +12,6 @@ import org.gbif.dp.analysis.duckdb.DuckDbDataPackageAnalyser;
 import org.gbif.dp.analysis.duckdb.DuckDbDialectRenderer;
 import org.gbif.dp.analysis.duckdb.DuckDbResourceLoader;
 import org.gbif.dp.descriptor.JacksonDataPackageParser;
-import org.gbif.dp.duckdb.CustomDuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfigBuilder;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
@@ -43,20 +41,9 @@ public class Main {
       ObjectMapper mapper = new ObjectMapper();
 
       DuckDbConfig duckDbConfig = DuckDbConfigBuilder.defaults()
-        .dbMemory("1 GiB")
+        .dbMemory(config.duckDbConfig.memory)
         .build();
-      DataAnalyser analyser = new DuckDbDataPackageAnalyser(
-        new JacksonDataPackageParser(),
-        new DuckDbResourceLoader(new DuckDbDialectRenderer()),
-        duckDbConfig);
-      DataPackageAnalysisOrchestrator dataPackageAnalysisOrchestrator =
-        new DefaultDataPackageAnalysisOrchestrator(analyser);
-
-
-      DwcValidator.DwcValidatorConfig validatorConfig = new DwcValidator.DwcValidatorConfig(
-        config.archiveRepository, config.unpackRepository, ValidationOptions.defaults()
-      );
-      DwcValidator validator = new DwcValidator(dataPackageAnalysisOrchestrator, validatorConfig);
+      DwcValidator validator = createValidator(config, duckDbConfig);
 
       ValidationFinishedPublisher publisher = new ValidationFinishedPublisher(
         new RabbitMessagePublisher(channel, config.rabbitMq.outputExchange, config.rabbitMq.outputRoutingKey),
@@ -70,7 +57,8 @@ public class Main {
         handler);
 
       consumer.start();
-      log.info("DwC validation service running.");
+      log.info("DwC validation service is listening for messages on queue[{}], publishing results to exchange[{}] with routing-key[{}]",
+        config.rabbitMq.inputQueue, config.rabbitMq.outputExchange,  config.rabbitMq.outputRoutingKey);
 
       Runtime.getRuntime().addShutdownHook(new Thread(() -> {
         try {
@@ -85,5 +73,20 @@ public class Main {
       Thread.currentThread().join();
     }
 
+  }
+
+  private static DwcValidator createValidator(Config config, DuckDbConfig duckDbConfig) {
+    DataAnalyser analyser = new DuckDbDataPackageAnalyser(
+      new JacksonDataPackageParser(),
+      new DuckDbResourceLoader(new DuckDbDialectRenderer()),
+      duckDbConfig);
+    DataPackageAnalysisOrchestrator dataPackageAnalysisOrchestrator =
+      new DefaultDataPackageAnalysisOrchestrator(analyser);
+
+    DwcValidator.DwcValidatorConfig validatorConfig = new DwcValidator.DwcValidatorConfig(
+      config.archiveRepository, config.unpackRepository, ValidationOptions.defaults()
+    );
+    DwcValidator validator = new DwcValidator(dataPackageAnalysisOrchestrator, validatorConfig);
+    return validator;
   }
 }

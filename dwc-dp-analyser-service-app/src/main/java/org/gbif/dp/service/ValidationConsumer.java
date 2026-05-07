@@ -7,6 +7,7 @@ import org.gbif.dp.service.messaging.MessageConsumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import java.util.UUID;
 
@@ -35,15 +36,19 @@ public class ValidationConsumer {
         datasetUuid = UUID.fromString(node.get("datasetUuid").asText());
         int attempt = node.get("attempt").asInt();
 
+        MDC.put("datasetKey", datasetUuid.toString());
+        MDC.put("attempt", String.valueOf(attempt));
+        MDC.put("step", "Validation");
+
         handler.handle(new ValidationRequest(datasetUuid, attempt), messageId);
 
         ack.ack();
       } catch (Exception e) {
-        // TODO how to handle system errors
         log.error("Failed to process msgId: [{}], dataset: [{}]", messageId, datasetUuid, e);
         ack.nack();
+      } finally {
+        MDC.clear();
       }
     });
-    log.info("Listening for messages");
   }
 }

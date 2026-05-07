@@ -52,8 +52,11 @@ tasks:
       vars: [ARCHIVE_REPOSITORY, UNPACK_REPOSITORY]
     cmds:
       - '{{.CONTAINER_CLI}} run --rm
+        --memory=4g
+        --memory-swap=4g
         -v {{.ARCHIVE_REPOSITORY}}:/data/datapackages
         -v {{.UNPACK_REPOSITORY}}:/data/datapackages-unpacked
+        -e JVM_OPTIONS="-Xms256m -Xmx1g"
         -e RABBIT_HOST={{.RABBIT_HOST | default "localhost"}}
         -e RABBIT_PORT={{.RABBIT_PORT | default "5672"}}
         -e RABBIT_USER={{.RABBIT_USER | default "guest"}}

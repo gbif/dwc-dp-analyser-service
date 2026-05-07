@@ -17,7 +17,6 @@ public class Config {
     description = "Directory where archives are unpacked before validation")
   public Path unpackRepository;
 
-  // Nested class keeps RabbitMQ args grouped
   public static class RabbitMq {
 
     @Option(names = "--rabbit-host", defaultValue = "localhost",
@@ -53,6 +52,15 @@ public class Config {
     public String outputRoutingKey;
   }
 
+  public static class DuckDbConfig {
+    @Option(names = "--duckdb-memory", defaultValue = "2GiB",
+      description = "DuckDB allowed memory, which is running alongside the JVM")
+    public String memory;
+  }
+
   @CommandLine.ArgGroup(exclusive = false, heading = "RabbitMQ options:%n")
   public RabbitMq rabbitMq = new RabbitMq();
+
+  @CommandLine.ArgGroup(exclusive = false, heading = "DuckDb options:%n")
+  public DuckDbConfig duckDbConfig = new DuckDbConfig();
 }

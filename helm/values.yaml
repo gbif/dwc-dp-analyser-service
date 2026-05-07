@@ -7,7 +7,7 @@ image:
   tag: latest
   pullPolicy: Always
 
-jvmOptions: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx2g"
+jvmOptions: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx1g -Dlogback.configurationFile=/app/config/logback.xml"
 
 rabbit:
   host: localhost
@@ -20,6 +20,27 @@ rabbit:
   password: guest
   createSecret: false
   credentialsSecret: dwc-dp-analyser-rabbitmq-credentials
+
+duckdb:
+  # The app is mainly hungry for memory with duck db, not the java process
+  memory: "2 Gib"
+
+environment: default
+
+log:
+  level: INFO
+  logback:
+    config: |
+      <configuration>
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+          <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <pattern>%d{HH:mm:ss} %-5level %logger{36} - %msg%n</pattern>
+          </encoder>
+        </appender>
+        <root level="${LOG_LEVEL:-INFO}">
+          <appender-ref ref="CONSOLE"/>
+        </root>
+      </configuration>
 
 volumes:
   # Volume backing for the two mount points the app requires.
@@ -40,5 +61,5 @@ resources:
     cpu: 250m
     ephemeral-storage: 20Gi
   limits:
-    memory: 3Gi
+    memory: 3.5Gi
     cpu: 2000m

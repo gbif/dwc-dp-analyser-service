@@ -18,6 +18,7 @@ ENV RABBIT_HOST=localhost \
     RABBIT_USER=guest \
     RABBIT_PASSWORD=guest \
     RABBIT_VHOST=/ \
+    DUCKDB_MEMORY="3GiB" \
     INPUT_QUEUE=dwcdp-validator \
     OUTPUT_EXCHANGE=crawler \
     OUTPUT_ROUTING_KEY=crawl.dwcdp.validation.finished \

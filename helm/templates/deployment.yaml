@@ -29,6 +29,8 @@ spec:
               value: {{ .Values.rabbit.port | quote }}
             - name: RABBIT_VHOST
               value: {{ .Values.rabbit.vhost | quote }}
+            - name: DUCKDB_MEMORY
+              value: {{ .Values.duckdb.memory | quote }}
             - name: INPUT_QUEUE
               value: {{ .Values.rabbit.inputQueue | quote }}
             - name: OUTPUT_EXCHANGE
@@ -45,6 +47,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.rabbit.credentialsSecret }}
                   key: password
+            - name: LOG_LEVEL
+              value: {{ .Values.log.level | quote }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -63,9 +67,15 @@ spec:
               # Impherial mount
             - name: workdir
               mountPath: /data/datapackages-unpacked
+            - name: logback-config
+              mountPath: /app/config/logback.xml
+              subPath: logback.xml
           resources:
             {{ toYaml .Values.resources | nindent 12 }}
       volumes:
+        - name: logback-config
+          configMap:
+            name: dwc-dp-analyser-logback
       {{- range $name, $config := .Values.volumes }}
         - name: {{ $name }}
         {{- if dig "nfs" nil $config }}

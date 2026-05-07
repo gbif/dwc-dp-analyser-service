@@ -79,5 +79,6 @@
     <slf4j.version>2.0.17</slf4j.version>
     <junit-jupiter.version>5.11.4</junit-jupiter.version>
     <jackson.version>2.18.2</jackson.version>
+    <net.logstash.logback.version>7.4</net.logstash.logback.version>
   </properties>
 </project>
