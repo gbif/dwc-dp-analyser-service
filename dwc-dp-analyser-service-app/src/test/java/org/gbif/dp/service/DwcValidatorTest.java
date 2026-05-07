@@ -60,7 +60,7 @@ class DwcValidatorTest {
     Path dataPackagePath = capturedPath.get();
     assertEquals(expectedUnpackDir, dataPackagePath.getParent());
 
-    assertTrue(Files.exists(expectedUnpackDir), "Unpack directory should exist");
+    assertFalse(Files.exists(expectedUnpackDir), "Unpack directory should have been deleted from cleanup");
   }
 
   @Test

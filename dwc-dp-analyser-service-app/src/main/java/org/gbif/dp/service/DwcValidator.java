@@ -10,7 +10,11 @@ import org.gbif.dp.duckdb.DuckDbConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 
 public class DwcValidator implements Validator {
@@ -45,19 +49,26 @@ public class DwcValidator implements Validator {
       .resolve(request.datasetUuid().toString())
       .resolve(request.datasetUuid() + "." + request.attempt());
 
-    log.info("Unzipping [{}] to [{}]", zipFile, unpackDir);
-    ZipUtils.unzip(zipFile, unpackDir);
+    try {
+      log.info("Unzipping [{}] to [{}]", zipFile, unpackDir);
+      ZipUtils.unzip(zipFile, unpackDir);
 
-    return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
+      return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
+    } finally {
+      deleteFolder(unpackDir);
+    }
+  }
+
+  private void deleteFolder(Path folder) throws IOException {
+    try (var stream = Files.walk(folder)) {
+      stream.sorted(Comparator.reverseOrder())
+        .forEach(p -> {
+          try { Files.delete(p); }
+          catch (IOException e) { throw new UncheckedIOException(e); }
+        });
+    }
   }
 
   public record DwcValidatorConfig(Path archiveRepository, Path unpackRepository, ValidationOptions validationOptions) {
-
-    public static ValidationOptions withDuckDbConfig(DuckDbConfig config) {
-      ValidationOptions defaultOptions = ValidationOptions.defaults();
-      return new ValidationOptions(
-        defaultOptions.sampleSize()
-      );
-    }
   }
 }

@@ -56,6 +56,10 @@ public class Config {
     @Option(names = "--duckdb-memory", defaultValue = "2GiB",
       description = "DuckDB allowed memory, which is running alongside the JVM")
     public String memory;
+
+    @Option(names = "--duckdb-temp-dir", defaultValue = "",
+      description = "DuckDB temp dir for spill to disk, default(empty string) uses duckdb default")
+    public String tempDir;
   }
 
   @CommandLine.ArgGroup(exclusive = false, heading = "RabbitMQ options:%n")

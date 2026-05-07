@@ -42,6 +42,7 @@ public class Main {
 
       DuckDbConfig duckDbConfig = DuckDbConfigBuilder.defaults()
         .dbMemory(config.duckDbConfig.memory)
+        .dbTempDir(config.duckDbConfig.tempDir)
         .build();
       DwcValidator validator = createValidator(config, duckDbConfig);
 
