@@ -50,7 +50,7 @@ public class DwcValidator implements Validator {
       .resolve(request.datasetUuid() + "." + request.attempt());
 
     try {
-      log.info("Unzipping [{}] to [{}]", zipFile, unpackDir);
+      log.debug("Unzipping [{}] to [{}]", zipFile, unpackDir);
       ZipUtils.unzip(zipFile, unpackDir);
 
       return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);

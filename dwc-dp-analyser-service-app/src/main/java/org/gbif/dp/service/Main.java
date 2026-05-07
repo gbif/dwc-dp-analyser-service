@@ -68,7 +68,7 @@ public class Main {
           rabbit.close();
           log.info("RabbitMQ connection closed.");
         } catch (Exception e) {
-          log.warn("Error during shutdown", e);
+          log.error("Error during shutdown", e);
         }
       }));
       Thread.currentThread().join();
