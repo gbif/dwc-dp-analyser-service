@@ -23,7 +23,8 @@ rabbit:
 
 duckdb:
   # The app is mainly hungry for memory with duck db, not the java process
-  memory: "2 Gib"
+  memory: "2Gib"
+  tempDir: ""
 
 environment: default
 
@@ -41,16 +42,6 @@ log:
           <appender-ref ref="CONSOLE"/>
         </root>
       </configuration>
-
-volumes:
-  # Volume backing for the two mount points the app requires.
-  # Accepts any Kubernetes volume type (nfs, persistentVolumeClaim, emptyDir, etc.)
-  # Override in environment values to match your infrastructure.
-  # See: https://kubernetes.io/docs/concepts/storage/volumes/#volume-types
-  incoming:
-    emptyDir: {}
-  workdir:
-    emptyDir: {}
 
 service:
   port: 8080

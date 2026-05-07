@@ -12,6 +12,10 @@ spec:
       labels:
         app: dwc-dp-analyser
     spec:
+      {{- with .Values.nodeSelector}}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{ end }}
       initContainers:
         - name: wait-for-rabbitmq
           image: busybox
@@ -31,6 +35,8 @@ spec:
               value: {{ .Values.rabbit.vhost | quote }}
             - name: DUCKDB_MEMORY
               value: {{ .Values.duckdb.memory | quote }}
+            - name: DUCKDB_TEMP_DIR
+              value: {{ .Values.duckdb.tempDir | quote }}
             - name: INPUT_QUEUE
               value: {{ .Values.rabbit.inputQueue | quote }}
             - name: OUTPUT_EXCHANGE
@@ -66,22 +72,25 @@ spec:
               readOnly: true
               # Impherial mount
             - name: workdir
-              mountPath: /data/datapackages-unpacked
+              mountPath: /data/workdir
             - name: logback-config
               mountPath: /app/config/logback.xml
               subPath: logback.xml
           resources:
-            {{ toYaml .Values.resources | nindent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: logback-config
           configMap:
             name: dwc-dp-analyser-logback
-      {{- range $name, $config := .Values.volumes }}
-        - name: {{ $name }}
-        {{- if dig "nfs" nil $config }}
-          nfs:
-            {{- toYaml $config.nfs | nindent 12 }}
-        {{- else }}
+        - name: workdir
+          {{- if .Values.volumes.workdir }}
+          {{- toYaml .Values.volumes.workdir | nindent 10}}
+          {{- else }}
           emptyDir: {}
-        {{- end }}
-      {{- end }}
+          {{- end }}
+        - name: incoming
+          {{- if .Values.volumes.incoming }}
+          {{- toYaml .Values.volumes.incoming | nindent 10}}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

@@ -19,6 +19,7 @@ ENV RABBIT_HOST=localhost \
     RABBIT_PASSWORD=guest \
     RABBIT_VHOST=/ \
     DUCKDB_MEMORY="3GiB" \
+    DUCKDB_TEMP_DIR="" \
     INPUT_QUEUE=dwcdp-validator \
     OUTPUT_EXCHANGE=crawler \
     OUTPUT_ROUTING_KEY=crawl.dwcdp.validation.finished \
@@ -30,12 +31,14 @@ ENTRYPOINT ["sh", "-c", "exec java \
   ${JVM_OPTIONS} \
   -jar /app/service.jar \
   --archive-repository /data/datapackages \
-  --unpack-repository /data/datapackages-unpacked \
+  --unpack-repository /data/workdir \
   --rabbit-host ${RABBIT_HOST} \
   --rabbit-port ${RABBIT_PORT} \
   --rabbit-user ${RABBIT_USER} \
   --rabbit-password ${RABBIT_PASSWORD} \
   --rabbit-vhost ${RABBIT_VHOST} \
+  --duckdb-memory ${DUCKDB_MEMORY} \
+  --duckdb-temp-dir ${DUCKDB_TEMP_DIR} \
   --input-queue ${INPUT_QUEUE} \
   --output-exchange ${OUTPUT_EXCHANGE} \
   --output-routing-key ${OUTPUT_ROUTING_KEY}"]
