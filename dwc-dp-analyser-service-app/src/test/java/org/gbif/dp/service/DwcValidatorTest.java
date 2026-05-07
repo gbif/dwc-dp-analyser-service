@@ -56,11 +56,13 @@ class DwcValidatorTest {
     assertTrue(DatapackageAnalysisResult.isValid(result));
 
     // Verify analyser received the expected unpack directory
-    Path expectedUnpackDir = unpackRepository.resolve(DATASET_UUID.toString()).resolve(DATASET_UUID + "." + ATTEMPT);
+    Path datasetKeyDir = unpackRepository.resolve(DATASET_UUID.toString());
+    Path expectedUnpackDir = datasetKeyDir.resolve(DATASET_UUID + "." + ATTEMPT);
     Path dataPackagePath = capturedPath.get();
     assertEquals(expectedUnpackDir, dataPackagePath.getParent());
 
     assertFalse(Files.exists(expectedUnpackDir), "Unpack directory should have been deleted from cleanup");
+    assertFalse(Files.exists(datasetKeyDir), "Dataset key directory should have been deleted from cleanup");
   }
 
   @Test

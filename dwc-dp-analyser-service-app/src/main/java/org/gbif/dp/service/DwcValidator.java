@@ -55,7 +55,7 @@ public class DwcValidator implements Validator {
 
       return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
     } finally {
-      deleteFolder(unpackDir);
+      deleteFolder(unpackDir.getParent());
     }
   }
 
