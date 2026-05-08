@@ -18,12 +18,12 @@ ENV RABBIT_HOST=localhost \
     RABBIT_USER=guest \
     RABBIT_PASSWORD=guest \
     RABBIT_VHOST=/ \
-    DUCKDB_MEMORY="3GiB" \
-    DUCKDB_TEMP_DIR="" \
+    DUCKDB_MEMORY="2GiB" \
+    DUCKDB_TEMP_DIR="/data/workdir/.tmp" \
     INPUT_QUEUE=dwcdp-validator \
     OUTPUT_EXCHANGE=crawler \
     OUTPUT_ROUTING_KEY=crawl.dwcdp.validation.finished \
-    JVM_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Xms256m -Xmx2g"
+    JVM_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=30.0 -Xms256m -Xmx1g"
 
 USER stackable
 

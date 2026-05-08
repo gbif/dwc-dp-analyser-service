@@ -55,7 +55,7 @@ tasks:
         --memory=4g
         --memory-swap=4g
         -v {{.ARCHIVE_REPOSITORY}}:/data/datapackages
-        -v {{.UNPACK_REPOSITORY}}:/data/datapackages-unpacked
+        -v {{.UNPACK_REPOSITORY}}:/data/workdir
         -e JVM_OPTIONS="-Xms256m -Xmx1g"
         -e RABBIT_HOST={{.RABBIT_HOST | default "localhost"}}
         -e RABBIT_PORT={{.RABBIT_PORT | default "5672"}}

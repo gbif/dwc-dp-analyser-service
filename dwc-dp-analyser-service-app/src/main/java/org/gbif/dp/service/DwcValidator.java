@@ -53,9 +53,19 @@ public class DwcValidator implements Validator {
       log.debug("Unzipping [{}] to [{}]", zipFile, unpackDir);
       ZipUtils.unzip(zipFile, unpackDir);
 
-      return validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
+      log.debug("Running analysis for dataset [{}]", request.datasetUuid());
+      DatapackageAnalysisResult analysisResult = validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
+      log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), DatapackageAnalysisResult.isValid(analysisResult));
+      return analysisResult;
+    } catch (Exception e) {
+      log.error("Runtime error - Validation failed for dataset [{}]", request.datasetUuid(), e);
+      throw e;
     } finally {
-      deleteFolder(unpackDir.getParent());
+      Path parentDir = unpackDir.getParent();
+      if (Files.exists(parentDir)) {
+        log.debug("Cleaning up [{}]", parentDir);
+        deleteFolder(parentDir);
+      }
     }
   }
 
