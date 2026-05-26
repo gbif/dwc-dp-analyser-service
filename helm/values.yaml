@@ -19,10 +19,7 @@ rabbit:
   inputQueue: dwcdp-validator
   outputExchange: crawler
   outputRoutingKey: crawl.dwcdp.validation.finished
-  username: guest
-  password: guest
-  createSecret: false
-  credentialsSecret: dwc-dp-analyser-rabbitmq-credentials
+  credentialsSecret: rabbitmq-credentials
 
 duckdb:
   # The app is mainly hungry for memory with duck db, not the java process

@@ -95,6 +95,26 @@ task docker:run
 IMAGE=${repo-url}/dwc-dp-analyser:1.0.0 task dist
 ```
 
+## Kubernetes
+
+The Helm chart requires the following to exist in the cluster before installing:
+
+### RabbitMQ credentials secret
+
+```bash
+kubectl create secret generic rabbit-credentials \
+  --from-literal=username=<user> \
+  --from-literal=password=<password>
+```
+
+The secret name must match `rabbit.credentialsSecret` in your `values.yaml` (default: `rabbit-credentials`).
+
+### Installing the chart
+
+```bash
+helm install dwc-dp-analyser ./helm/dwc-dp-analyser -f values.yaml
+```
+
 ## Message format
 
 ### Inbound — `dwcdp-validator`
@@ -125,17 +145,13 @@ If the service cannot process a message (unparseable JSON, unexpected error), it
 
 ## Archive layout
 
-The service expects archives on disk at:
+The service resolves archives from `{archive-repository}/{datasetUuid}/` using the following logic:
 
-```
-{archive-repository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
-```
+1. If `datapackage.json` is already present in the directory, use it directly (no unpacking)
+2. Otherwise, locate `{datasetUuid}.{attempt}.dwcdp` and unpack it to:
+   `{unpack-repository}/{datasetUuid}/{datasetUuid}.{attempt}/`
 
-And unpacks to:
-
-```
-{unpack-repository}/{datasetUuid}/{datasetUuid}.{attempt}/
-```
+The `--unpack-repository` option is only used when unpacking is necessary.
 
 ## Running tests
 
