@@ -76,4 +76,38 @@ class DwcValidatorTest {
     assertThrows(Exception.class,
       () -> validator.validate(new ValidationRequest(anotherUuid, 99)));
   }
+
+  @Test
+  void validate_skipsUnzipWhenAlreadyUnpacked() throws Exception {
+    // Pre-place datapackage.json directly in the archive dataset dir (simulates already-unpacked)
+    Path datasetDir = archiveRepository.resolve(DATASET_UUID.toString());
+    Files.createFile(datasetDir.resolve("datapackage.json"));
+
+    AtomicReference<Path> capturedPath = new AtomicReference<>();
+
+    DwcValidator validator = new DwcValidator(
+      (datapackagePath, options, features) -> {
+        capturedPath.set(datapackagePath);
+        return DatapackageAnalysisTestResults.validResult();
+      },
+      config);
+
+    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
+
+    assertTrue(DatapackageAnalysisResult.isValid(result));
+
+    // Analyser should have received the archive path, not the unpack path
+    assertTrue(capturedPath.get().startsWith(archiveRepository),
+      "Should have used pre-unpacked path, not unpackRepository");
+
+    // Nothing should have been written to unpackRepository
+    Path expectedUnpackDir = unpackRepository
+      .resolve(DATASET_UUID.toString())
+      .resolve(DATASET_UUID + "." + ATTEMPT);
+    assertFalse(Files.exists(expectedUnpackDir), "Unpack directory should not have been created");
+
+    // Pre-placed file should still exist — no cleanup should have run
+    assertTrue(Files.exists(datasetDir.resolve("datapackage.json")),
+      "Pre-existing datapackage.json should not have been deleted");
+  }
 }

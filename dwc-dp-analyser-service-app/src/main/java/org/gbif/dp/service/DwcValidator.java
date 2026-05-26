@@ -21,6 +21,8 @@ public class DwcValidator implements Validator {
 
   private static final Logger log = LoggerFactory.getLogger(DwcValidator.class);
 
+  private static final String DATAPACKAGE_JSON = "datapackage.json";
+
   private static final List<AnalysisFeature> ONLY_VALIDATION = List.of(
     AnalysisFeature.PRIMARY_KEY_UNIQUE,
     AnalysisFeature.DATA_TYPE_CONSTRAINT,
@@ -39,32 +41,44 @@ public class DwcValidator implements Validator {
 
   @Override
   public DatapackageAnalysisResult validate(ValidationRequest request) throws Exception {
-    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
-    Path zipFile = config.archiveRepository()
-      .resolve(request.datasetUuid().toString())
-      .resolve(request.datasetUuid() + "." + request.attempt() + ".dwcdp");
-
-    // {unpackRepository}/{datasetUuid}/{datasetUuid}.{attempt}/
-    Path unpackDir = config.unpackRepository()
-      .resolve(request.datasetUuid().toString())
-      .resolve(request.datasetUuid() + "." + request.attempt());
+    Path unpackDir = null;
 
     try {
-      log.debug("Unzipping [{}] to [{}]", zipFile, unpackDir);
-      ZipUtils.unzip(zipFile, unpackDir);
+      Path datasetPath = config.archiveRepository().resolve(request.datasetUuid().toString());
+      Path unpackedDatapackage = datasetPath.resolve(DATAPACKAGE_JSON);
+      boolean isUnpacked = Files.exists(unpackedDatapackage);
+
+      if (!isUnpacked) {
+        // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
+        Path zipFile = datasetPath
+          .resolve(request.datasetUuid() + "." + request.attempt() + ".dwcdp");
+
+        // {unpackRepository}/{datasetUuid}/{datasetUuid}.{attempt}/
+        unpackDir = config.unpackRepository()
+          .resolve(request.datasetUuid().toString())
+          .resolve(request.datasetUuid() + "." + request.attempt());
+
+        log.debug("Unzipping [{}] to [{}]", zipFile, unpackDir);
+        ZipUtils.unzip(zipFile, unpackDir);
+
+        unpackedDatapackage = unpackDir.resolve(DATAPACKAGE_JSON);
+      } else {
+        log.debug("datapackage [{}] already unpacked", unpackedDatapackage);
+      }
 
       log.debug("Running analysis for dataset [{}]", request.datasetUuid());
-      DatapackageAnalysisResult analysisResult = validator.analyse(unpackDir.resolve("datapackage.json"), ValidationOptions.defaults(), ONLY_VALIDATION);
+      DatapackageAnalysisResult analysisResult = validator.analyse(unpackedDatapackage, ValidationOptions.defaults(), ONLY_VALIDATION);
       log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), DatapackageAnalysisResult.isValid(analysisResult));
       return analysisResult;
     } catch (Exception e) {
-      log.error("Runtime error - Validation failed for dataset [{}]", request.datasetUuid(), e);
-      throw e;
+      throw new RuntimeException(String.format("Runtime error - Unzip/Validation failed for dataset [%s]", request.datasetUuid()), e);
     } finally {
-      Path parentDir = unpackDir.getParent();
-      if (Files.exists(parentDir)) {
-        log.debug("Cleaning up [{}]", parentDir);
-        deleteFolder(parentDir);
+      if (unpackDir != null) {
+        Path parentDir = unpackDir.getParent();
+        if (Files.exists(parentDir)) {
+          log.debug("Cleaning up [{}]", parentDir);
+          deleteFolder(parentDir);
+        }
       }
     }
   }
