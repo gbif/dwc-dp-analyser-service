@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.gbif</groupId>
     <artifactId>dwc-dp-analyser-service</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>dwc-dp-analyser-service-api</artifactId>
