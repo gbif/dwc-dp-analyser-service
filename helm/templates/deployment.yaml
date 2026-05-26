@@ -1,16 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: dwc-dp-analyser
+  name: {{ .Values.label.app }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: dwc-dp-analyser
+      app: {{ .Values.label.app }}
   template:
     metadata:
       labels:
-        app: dwc-dp-analyser
+{{- toYaml .Values.label | nindent 8 }}
+        app.kubernetes.io/name: {{ .Values.label.app }}
+        app.kubernetes.io/version: {{ .Values.image.tag | quote }}
+        app.kubernetes.io/component: worker
+        app.kubernetes.io/managed-by: helm
+{{- if .Values.yunikorn.enabled }}
+        yunikorn.apache.org/app-id: {{ .Values.yunikorn.appId | quote }}
+        yunikorn.apache.org/queue: {{ .Values.yunikorn.queue | quote }}
+{{- end }}
+      annotations:
+        checksum: {{ toYaml .Values | sha256sum }}
     spec:
       {{- with .Values.nodeSelector}}
       nodeSelector:

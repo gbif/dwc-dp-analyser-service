@@ -1,5 +1,8 @@
 replicaCount: 1
 
+label:
+  app: dwc-dp-analyser
+
 image:
   # Replace repository with actual repository value
   repository: docker.io
