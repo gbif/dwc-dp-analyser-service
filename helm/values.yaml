@@ -19,7 +19,46 @@ rabbit:
   inputQueue: dwcdp-validator
   outputExchange: crawler
   outputRoutingKey: crawl.dwcdp.validation.finished
-  credentialsSecret: rabbitmq-credentials
+  # Scenario 1 — both username and password from existing secret:
+  #   existingSecret:
+  #     name: my-secret
+  #     keyUsername: username
+  #     keyPassword: password
+  #
+  # Scenario 2 — password from existing secret, username inline:
+  #   username: guest
+  #   existingSecret:
+  #     name: my-secret
+  #     keyPassword: password
+  #
+  # Scenario 3 — both inline (chart creates a Kubernetes secret for the password):
+  #   username: guest
+  #   password: my-password
+  username: guest
+  password: ""
+  existingSecret: {}
+
+registry:
+  # Required — no default. Example: https://api.gbif-dev.org/v1
+  url: ""
+  # Scenario 1 — both username and password from existing secret:
+  #   existingSecret:
+  #     name: my-secret
+  #     keyUsername: username
+  #     keyPassword: password
+  #
+  # Scenario 2 — password from existing secret, username inline:
+  #   username: my-admin-user
+  #   existingSecret:
+  #     name: my-secret
+  #     keyPassword: password
+  #
+  # Scenario 3 — both inline (chart creates a Kubernetes secret for the password):
+  #   username: my-admin-user
+  #   password: my-password
+  username: ""
+  password: ""
+  existingSecret: {}
 
 duckdb:
   # The app is mainly hungry for memory with duck db, not the java process

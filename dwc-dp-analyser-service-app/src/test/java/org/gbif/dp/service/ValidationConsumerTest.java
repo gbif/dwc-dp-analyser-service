@@ -35,16 +35,18 @@ class ValidationConsumerTest {
   private InMemoryMessageBus inbound;
   private InMemoryMessageBus outbound;
   private ValidationConsumer consumer;
+  private RegistryClient noOpRegistryClient;
 
   @BeforeEach
   void setUp() {
     inbound = new InMemoryMessageBus();
     outbound = new InMemoryMessageBus();
+    noOpRegistryClient = (datasetKey, attempt, result) -> {};
   }
 
   private ValidationConsumer consumerWith(Validator validator) {
     ValidationFinishedPublisher publisher = new ValidationFinishedPublisher(outbound, MAPPER);
-    ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher);
+    ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher, noOpRegistryClient);
     return new ValidationConsumer(inbound, MAPPER, handler);
   }
 

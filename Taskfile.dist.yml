@@ -22,9 +22,11 @@ tasks:
       - mvn verify
 
   docker:build:
-    desc: Build Docker image (IMAGE=name:tag)
+    desc: Build Docker image (IMAGE=name:tag, MAVEN_UPDATE_SNAPSHOTS=true to force -U)
     cmds:
-      - '{{.CONTAINER_CLI}} build -t {{.IMAGE}} .'
+      - '{{.CONTAINER_CLI}} build
+        --build-arg MAVEN_UPDATE_SNAPSHOTS={{.MAVEN_UPDATE_SNAPSHOTS | default "false"}}
+        -t {{.IMAGE}} .'
 
   docker:push:dist:
     desc: Build and push multi-arch Docker image (reads version from pom.xml)
@@ -49,19 +51,22 @@ tasks:
   docker:run:
     desc: Run the Docker image
     requires:
-      vars: [ARCHIVE_REPOSITORY, UNPACK_REPOSITORY]
+      vars: [ARCHIVE_REPOSITORY, WORKDIR, REGISTRY_URL, REGISTRY_USER, REGISTRY_PASSWORD]
     cmds:
       - '{{.CONTAINER_CLI}} run --rm
         --memory=4g
         --memory-swap=4g
         -v {{.ARCHIVE_REPOSITORY}}:/data/datapackages
-        -v {{.UNPACK_REPOSITORY}}:/data/workdir
+        -v {{.WORKDIR}}:/data/workdir
         -e JVM_OPTIONS="-Xms256m -Xmx1g"
         -e RABBIT_HOST={{.RABBIT_HOST | default "localhost"}}
         -e RABBIT_PORT={{.RABBIT_PORT | default "5672"}}
         -e RABBIT_USER={{.RABBIT_USER | default "guest"}}
         -e RABBIT_PASSWORD={{.RABBIT_PASSWORD | default "guest"}}
         -e RABBIT_VHOST={{.RABBIT_VHOST | default "/"}}
+        -e REGISTRY_URL={{.REGISTRY_URL}}
+        -e REGISTRY_USER={{.REGISTRY_USER}}
+        -e REGISTRY_PASSWORD={{.REGISTRY_PASSWORD}}
         -e INPUT_QUEUE={{.INPUT_QUEUE | default "dwcdp-validator"}}
         -e OUTPUT_EXCHANGE={{.OUTPUT_EXCHANGE | default "crawler"}}
         -e OUTPUT_ROUTING_KEY={{.OUTPUT_ROUTING_KEY | default "crawl.dwcdp.validation.finished"}}
@@ -82,9 +87,9 @@ tasks:
           RABBIT_HOST: '{{.GATEWAY}}'
 
   local:
-    desc: Start RabbitMQ + analyser locally via Compose
+    desc: DwcDp Analyse Service locally, including required services such as RabbitMQ and a mock for registry
     cmds:
-      - '{{.CONTAINER_CLI}} compose -f docker-compose.local.yml up'
+      - '{{.CONTAINER_CLI}} compose -f docker-compose.yml up'
 
   dist:
     desc: Build jar and Docker image
