@@ -61,7 +61,9 @@ public class Main {
         new RabbitMessagePublisher(channel, config.rabbitMq.outputExchange, config.rabbitMq.outputRoutingKey),
         mapper);
 
-      ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher);
+      RegistryClient registryClient = new HttpRegistryClient(config.registry.url, config.registry.user, config.registry.password, mapper);
+
+      ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher, registryClient);
 
       ValidationConsumer consumer = new ValidationConsumer(
         new RabbitMessageConsumer(channel, config.rabbitMq.inputQueue),
@@ -84,7 +86,6 @@ public class Main {
       }));
       Thread.currentThread().join();
     }
-
   }
 
   private static DwcValidator createValidator(Config config, DuckDbConfig duckDbConfig) {
@@ -95,10 +96,8 @@ public class Main {
     DataPackageAnalysisOrchestrator dataPackageAnalysisOrchestrator =
       new DefaultDataPackageAnalysisOrchestrator(analyser);
 
-    DwcValidator.DwcValidatorConfig validatorConfig = new DwcValidator.DwcValidatorConfig(
-      config.archiveRepository, config.unpackRepository, ValidationOptions.defaults()
-    );
-    DwcValidator validator = new DwcValidator(dataPackageAnalysisOrchestrator, validatorConfig);
-    return validator;
+    DwcValidator.DwcValidatorConfig dwcValidatorConfig = new DwcValidator.DwcValidatorConfig(ValidationOptions.defaults());
+    DatapackagePathResolver pathResolver = new DatapackagePathResolver(config.archiveRepository, config.workdir);
+    return new DwcValidator(dataPackageAnalysisOrchestrator, pathResolver, dwcValidatorConfig);
   }
 }

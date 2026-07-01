@@ -1,0 +1,35 @@
+services:
+  rabbitmq:
+    image: docker.io/rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  rabbitmq-init:
+    image: docker.io/curlimages/curl:latest
+    volumes:
+      - ./scripts/rabbitmq_init.sh:/rabbitmq_init.sh:ro
+    entrypoint: ["sh", "/rabbitmq_init.sh"]
+
+  registry-mock:
+    image: docker.io/python:3.12-slim
+    command: ["python3", "/app/registry_mock.py"]
+    volumes:
+      - ./scripts/registry_mock.py:/app/registry_mock.py:ro
+    ports:
+      - "8080:8080"
+
+  analyser:
+    build: .
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_USER: guest
+      RABBIT_PASSWORD: guest
+      REGISTRY_URL: http://registry-mock:8080
+      REGISTRY_USER: mock
+      REGISTRY_PASSWORD: mock
+    volumes:
+      - ./scripts/wait-for-queues.sh:/wait-for-queues.sh:ro
+      - '${ARCHIVE_REPOSITORY:-./data/datapackages}:/data/datapackages'
+      - '${WORKDIR:-./data/workdir}:/data/workdir'
+    entrypoint: ["sh", "/wait-for-queues.sh"]

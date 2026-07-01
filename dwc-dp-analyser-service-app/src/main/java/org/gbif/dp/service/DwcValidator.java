@@ -32,8 +32,6 @@ public class DwcValidator implements Validator {
 
   private static final Logger log = LoggerFactory.getLogger(DwcValidator.class);
 
-  private static final String DATAPACKAGE_JSON = "datapackage.json";
-
   private static final List<AnalysisFeature> ONLY_VALIDATION = List.of(
     AnalysisFeature.PRIMARY_KEY_UNIQUE,
     AnalysisFeature.DATA_TYPE_CONSTRAINT,
@@ -43,10 +41,14 @@ public class DwcValidator implements Validator {
   );
 
   private final DataPackageAnalysisOrchestrator validator;
+  private final DatapackagePathResolver pathResolver;
   private final DwcValidatorConfig config;
 
-  public DwcValidator(DataPackageAnalysisOrchestrator validator, DwcValidatorConfig config) {
+  public DwcValidator(DataPackageAnalysisOrchestrator validator, DatapackagePathResolver pathResolver,
+                      DwcValidatorConfig config
+  ) {
     this.validator = validator;
+    this.pathResolver = pathResolver;
     this.config = config;
   }
 
@@ -55,30 +57,13 @@ public class DwcValidator implements Validator {
     Path unpackDir = null;
 
     try {
-      Path datasetPath = config.archiveRepository().resolve(request.datasetUuid().toString());
-      Path unpackedDatapackage = datasetPath.resolve(DATAPACKAGE_JSON);
-      boolean isUnpacked = Files.exists(unpackedDatapackage);
-
-      if (!isUnpacked) {
-        // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
-        Path zipFile = datasetPath
-          .resolve(request.datasetUuid() + "." + request.attempt() + ".dwcdp");
-
-        // {unpackRepository}/{datasetUuid}/{datasetUuid}.{attempt}/
-        unpackDir = config.unpackRepository()
-          .resolve(request.datasetUuid().toString())
-          .resolve(request.datasetUuid() + "." + request.attempt());
-
-        log.debug("Unzipping [{}] to [{}]", zipFile, unpackDir);
-        ZipUtils.unzip(zipFile, unpackDir);
-
-        unpackedDatapackage = unpackDir.resolve(DATAPACKAGE_JSON);
-      } else {
-        log.debug("datapackage [{}] already unpacked", unpackedDatapackage);
-      }
+      DatapackagePathResolver.Resolution resolution = pathResolver.resolve(
+        request.datasetUuid(), request.attempt());
+      unpackDir = resolution.unpackDirToCleanUp();
 
       log.debug("Running analysis for dataset [{}]", request.datasetUuid());
-      DatapackageAnalysisResult analysisResult = validator.analyse(unpackedDatapackage, ValidationOptions.defaults(), ONLY_VALIDATION);
+      DatapackageAnalysisResult analysisResult = validator.analyse(
+        resolution.datapackageJson(), config.validationOptions(), AnalysisFeature.ALL_FEATURES);
       log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), DatapackageAnalysisResult.isValid(analysisResult));
       return analysisResult;
     } catch (Exception e) {
@@ -104,6 +89,6 @@ public class DwcValidator implements Validator {
     }
   }
 
-  public record DwcValidatorConfig(Path archiveRepository, Path unpackRepository, ValidationOptions validationOptions) {
+  public record DwcValidatorConfig(ValidationOptions validationOptions) {
   }
 }

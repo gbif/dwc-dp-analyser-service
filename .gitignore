@@ -37,3 +37,6 @@ build/
 
 # Ignore scratch files
 *.scratch
+
+# ignore local docker setup data
+data/

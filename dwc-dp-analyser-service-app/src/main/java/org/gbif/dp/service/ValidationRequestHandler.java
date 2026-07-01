@@ -29,27 +29,39 @@ public class ValidationRequestHandler {
 
   private final Validator validator;
   private final ValidationFinishedPublisher publisher;
+  private final RegistryClient registryClient;
 
-  public ValidationRequestHandler(Validator validator, ValidationFinishedPublisher publisher) {
+  public ValidationRequestHandler(
+    Validator validator,
+    ValidationFinishedPublisher publisher,
+    RegistryClient registryClient) {
     this.validator = validator;
     this.publisher = publisher;
+    this.registryClient = registryClient;
   }
 
   public void handle(ValidationRequest request, String messageId) throws Exception {
     log.info("Validating msgId: [{}], dataset: [{}], attempt: [{}]",
-      messageId, request.datasetUuid(), request.attempt());
+             messageId, request.datasetUuid(), request.attempt());
 
     DatapackageAnalysisResult result = validator.validate(request);
     boolean valid = DatapackageAnalysisResult.isValid(result);
+
+    try {
+      registryClient.putValidationReport(request.datasetUuid(), request.attempt(), result);
+    } catch (RegistryClientException e) {
+      log.warn("Failed to store validation report in registry for dataset [{}] attempt [{}] — continuing",
+               request.datasetUuid(), request.attempt(), e);
+    }
 
     publisher.publish(new DwcDpValidationFinished(
       request.datasetUuid(),
       request.attempt(),
       valid,
       result
-      ));
+    ));
 
     log.info("Processed dataset: [{}], attempt: [{}], valid: [{}]",
-      request.datasetUuid(), request.attempt(), valid);
+             request.datasetUuid(), request.attempt(), valid);
   }
 }

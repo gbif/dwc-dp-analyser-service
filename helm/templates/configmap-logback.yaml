@@ -1,7 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: dwc-dp-analyser-logback
+  name: {{ include "dwc-dp-analyser.fullname" . }}-logback
+  labels:
+    {{- include "dwc-dp-analyser.labels" . | nindent 4 }}
 data:
   logback.xml: |
 {{ .Values.log.logback.config | indent 4 }}

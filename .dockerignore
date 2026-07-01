@@ -1,0 +1,32 @@
+# Local test data
+data/
+
+# VCS
+.git/
+.gitignore
+
+# Helm / k8s — not needed for the jar build
+helm/
+
+# Build artifacts (let Maven cache mount handle this, not host state)
+target/
+**/target/
+
+# Scripts for local compose, not part of the build
+scripts/
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+
+# OS cruft
+.DS_Store
+
+# Docker/compose files themselves
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Taskfile
+Taskfile.dist.yml

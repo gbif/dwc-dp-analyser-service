@@ -35,22 +35,26 @@ class DwcValidatorTest {
 
   private static final UUID DATASET_UUID = UUID.randomUUID();
   private static final int ATTEMPT = 1;
+
+  private DatapackagePathResolver pathResolver;
   private DwcValidator.DwcValidatorConfig config;
 
   @BeforeEach
   void setUp() throws Exception {
     // Place the fixture zip at the expected path:
-    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}.dwcdp
+    // {archiveRepository}/{datasetUuid}/{datasetUuid}.{attempt}/{datasetUuid}.{attempt}.dwcdp
     Path datasetDir = archiveRepository.resolve(DATASET_UUID.toString());
-    Files.createDirectories(datasetDir);
-    Path zipDest = datasetDir.resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
+    Path attemptDir = datasetDir.resolve(DATASET_UUID + "." + ATTEMPT);
+    Files.createDirectories(attemptDir);
+    Path zipDest = attemptDir.resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
 
     try (var in = getClass().getResourceAsStream("/fixtures/test-dataset.dwcdp")) {
       assertNotNull(in, "Fixture zip(dwcdp) not found in test resources");
       Files.copy(in, zipDest, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    this.config = new DwcValidator.DwcValidatorConfig(archiveRepository, unpackRepository, ValidationOptions.defaults());
+    this.pathResolver = new DatapackagePathResolver(archiveRepository, unpackRepository);
+    this.config = new DwcValidator.DwcValidatorConfig(ValidationOptions.defaults());
   }
 
   @Test
@@ -62,6 +66,7 @@ class DwcValidatorTest {
         capturedPath.set(datapackagePath);
         return DatapackageAnalysisTestResults.validResult();
       },
+      pathResolver,
       config);
 
     DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
@@ -82,17 +87,51 @@ class DwcValidatorTest {
   void validate_missingZip_throwsException() {
     DwcValidator validator = new DwcValidator(
       (datapackagePath, options, features) -> DatapackageAnalysisTestResults.validResult(),
+      pathResolver,
       config);
 
     // Use a UUID that has no zip on disk
     UUID anotherUuid = UUID.randomUUID();
     assertThrows(Exception.class,
-      () -> validator.validate(new ValidationRequest(anotherUuid, 99)));
+                 () -> validator.validate(new ValidationRequest(anotherUuid, 99)));
   }
 
   @Test
-  void validate_skipsUnzipWhenAlreadyUnpacked() throws Exception {
-    // Pre-place datapackage.json directly in the archive dataset dir (simulates already-unpacked)
+  void validate_skipsUnzipWhenAlreadyUnpacked_attemptSpecific() throws Exception {
+    // Pre-place datapackage.json at {uuid}/{uuid}.{attempt}/datapackage.json (priority 1)
+    Path attemptDir = archiveRepository.resolve(DATASET_UUID.toString()).resolve(DATASET_UUID + "." + ATTEMPT);
+    Files.createFile(attemptDir.resolve("datapackage.json"));
+
+    AtomicReference<Path> capturedPath = new AtomicReference<>();
+
+    DwcValidator validator = new DwcValidator(
+      (datapackagePath, options, features) -> {
+        capturedPath.set(datapackagePath);
+        return DatapackageAnalysisTestResults.validResult();
+      },
+      pathResolver,
+      config);
+
+    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
+
+    assertTrue(DatapackageAnalysisResult.isValid(result));
+
+    // Analyser should have received the archive path, not the unpack path
+    assertTrue(capturedPath.get().startsWith(archiveRepository),
+               "Should have used pre-unpacked path, not unpackRepository");
+
+    // Nothing should have been written to unpackRepository
+    assertFalse(Files.exists(unpackRepository.resolve(DATASET_UUID.toString())),
+                "Unpack directory should not have been created");
+
+    // Pre-placed file should still exist — no cleanup should have run
+    assertTrue(Files.exists(attemptDir.resolve("datapackage.json")),
+               "Pre-existing datapackage.json should not have been deleted");
+  }
+
+  @Test
+  void validate_skipsUnzipWhenAlreadyUnpacked_latestPattern() throws Exception {
+    // Pre-place datapackage.json directly at {uuid}/datapackage.json (priority 2, no attempt dir)
     Path datasetDir = archiveRepository.resolve(DATASET_UUID.toString());
     Files.createFile(datasetDir.resolve("datapackage.json"));
 
@@ -103,24 +142,15 @@ class DwcValidatorTest {
         capturedPath.set(datapackagePath);
         return DatapackageAnalysisTestResults.validResult();
       },
+      pathResolver,
       config);
 
     DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
 
     assertTrue(DatapackageAnalysisResult.isValid(result));
+    assertEquals(datasetDir.resolve("datapackage.json"), capturedPath.get());
 
-    // Analyser should have received the archive path, not the unpack path
-    assertTrue(capturedPath.get().startsWith(archiveRepository),
-      "Should have used pre-unpacked path, not unpackRepository");
-
-    // Nothing should have been written to unpackRepository
-    Path expectedUnpackDir = unpackRepository
-      .resolve(DATASET_UUID.toString())
-      .resolve(DATASET_UUID + "." + ATTEMPT);
-    assertFalse(Files.exists(expectedUnpackDir), "Unpack directory should not have been created");
-
-    // Pre-placed file should still exist — no cleanup should have run
-    assertTrue(Files.exists(datasetDir.resolve("datapackage.json")),
-      "Pre-existing datapackage.json should not have been deleted");
+    assertFalse(Files.exists(unpackRepository.resolve(DATASET_UUID.toString())),
+                "Unpack directory should not have been created");
   }
 }

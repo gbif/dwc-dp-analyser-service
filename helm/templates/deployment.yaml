@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.label.app }}
+  name: {{ include "dwc-dp-analyser.fullname" . }}
+  labels:
+    {{- include "dwc-dp-analyser.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Values.label.app }}
+      {{- include "dwc-dp-analyser.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-{{- toYaml .Values.label | nindent 8 }}
-        app.kubernetes.io/name: {{ .Values.label.app }}
+        {{- include "dwc-dp-analyser.labels" . | nindent 8 }}
         app.kubernetes.io/version: {{ .Values.image.tag | quote }}
         app.kubernetes.io/component: worker
-        app.kubernetes.io/managed-by: helm
 {{- if .Values.yunikorn.enabled }}
         yunikorn.apache.org/app-id: {{ .Values.yunikorn.appId | quote }}
         yunikorn.apache.org/queue: {{ .Values.yunikorn.queue | quote }}
@@ -54,15 +54,45 @@ spec:
             - name: OUTPUT_ROUTING_KEY
               value: {{ .Values.rabbit.outputRoutingKey | quote }}
             - name: RABBIT_USER
+              {{- if and .Values.rabbit.existingSecret .Values.rabbit.existingSecret.keyUsername }}
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.rabbit.credentialsSecret }}
-                  key: username
+                  name: {{ .Values.rabbit.existingSecret.name }}
+                  key: {{ .Values.rabbit.existingSecret.keyUsername }}
+              {{- else }}
+              value: {{ .Values.rabbit.username | required "rabbit.username is required when not using existingSecret.keyUsername" | quote }}
+              {{- end }}
             - name: RABBIT_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.rabbit.credentialsSecret }}
+                  {{- if .Values.rabbit.existingSecret }}
+                  name: {{ .Values.rabbit.existingSecret.name }}
+                  key: {{ .Values.rabbit.existingSecret.keyPassword | required "rabbit.existingSecret.keyPassword is required when existingSecret is set" }}
+                  {{- else }}
+                  name: {{ include "dwc-dp-analyser.fullname" . }}-rabbit
                   key: password
+                  {{- end }}
+            - name: REGISTRY_URL
+              value: {{ .Values.registry.url | required "registry.url is required" | quote }}
+            - name: REGISTRY_USER
+              {{- if and .Values.registry.existingSecret .Values.registry.existingSecret.keyUsername }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.registry.existingSecret.name }}
+                  key: {{ .Values.registry.existingSecret.keyUsername }}
+              {{- else }}
+              value: {{ .Values.registry.username | required "registry.username is required when not using existingSecret.keyUsername" | quote }}
+              {{- end }}
+            - name: REGISTRY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  {{- if .Values.registry.existingSecret }}
+                  name: {{ .Values.registry.existingSecret.name }}
+                  key: {{ .Values.registry.existingSecret.keyPassword | required "registry.existingSecret.keyPassword is required when existingSecret is set" }}
+                  {{- else }}
+                  name: {{ include "dwc-dp-analyser.fullname" . }}-registry
+                  key: password
+                  {{- end }}
             - name: LOG_LEVEL
               value: {{ .Values.log.level | quote }}
           ports:
@@ -70,7 +100,6 @@ spec:
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
-            # Readyness-check on rabbitMQ
             exec:
               command: ["pgrep", "-f", "service.jar"]
             initialDelaySeconds: 30
@@ -80,7 +109,6 @@ spec:
             - name: incoming
               mountPath: /data/datapackages
               readOnly: true
-              # Impherial mount
             - name: workdir
               mountPath: /data/workdir
             - name: logback-config
@@ -91,7 +119,7 @@ spec:
       volumes:
         - name: logback-config
           configMap:
-            name: dwc-dp-analyser-logback
+            name: {{ include "dwc-dp-analyser.fullname" . }}-logback
         - name: workdir
           {{- if .Values.volumes.workdir }}
           {{- toYaml .Values.volumes.workdir | nindent 10}}

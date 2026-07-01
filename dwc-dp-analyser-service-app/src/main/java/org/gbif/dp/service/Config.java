@@ -26,9 +26,24 @@ public class Config {
     description = "Directory where downloaded zip archives are stored")
   public Path archiveRepository;
 
-  @Option(names = "--unpack-repository", required = true,
+  @Option(names = "--workdir", required = true,
     description = "Directory where archives are unpacked before validation")
-  public Path unpackRepository;
+  public Path workdir;
+
+  public static class Registry {
+
+    @Option(names = "--registry-url", required = true,
+      description = "Registry API base URL (e.g. https://api.gbif-dev.org/v1)")
+    public String url;
+
+    @Option(names = "--registry-user", required = true,
+      description = "Registry API username (must have ADMIN_ROLE)")
+    public String user;
+
+    @Option(names = "--registry-password", required = true,
+      description = "Registry API password")
+    public String password;
+  }
 
   public static class RabbitMq {
 
@@ -74,6 +89,9 @@ public class Config {
       description = "DuckDB temp dir for spill to disk, default(empty string) uses duckdb default")
     public String tempDir;
   }
+
+  @CommandLine.ArgGroup(exclusive = false, heading = "Registry options:%n")
+  public Registry registry = new Registry();
 
   @CommandLine.ArgGroup(exclusive = false, heading = "RabbitMQ options:%n")
   public RabbitMq rabbitMq = new RabbitMq();
