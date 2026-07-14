@@ -59,11 +59,11 @@ class DwcValidatorTest {
 
   @Test
   void validate_unpacksZipAndCallsAnalyser() throws Exception {
-    AtomicReference<Path> capturedPath = new AtomicReference<>();
+    AtomicReference<String> capturedLocation = new AtomicReference<>();
 
     DwcValidator validator = new DwcValidator(
-      (datapackagePath, options, features) -> {
-        capturedPath.set(datapackagePath);
+      (descriptorLocation, options, features) -> {
+        capturedLocation.set(descriptorLocation);
         return DatapackageAnalysisTestResults.validResult();
       },
       pathResolver,
@@ -76,7 +76,7 @@ class DwcValidatorTest {
     // Verify analyser received the expected unpack directory
     Path datasetKeyDir = unpackRepository.resolve(DATASET_UUID.toString());
     Path expectedUnpackDir = datasetKeyDir.resolve(DATASET_UUID + "." + ATTEMPT);
-    Path dataPackagePath = capturedPath.get();
+    Path dataPackagePath = Path.of(capturedLocation.get());
     assertEquals(expectedUnpackDir, dataPackagePath.getParent());
 
     assertFalse(Files.exists(expectedUnpackDir), "Unpack directory should have been deleted from cleanup");
@@ -86,7 +86,7 @@ class DwcValidatorTest {
   @Test
   void validate_missingZip_throwsException() {
     DwcValidator validator = new DwcValidator(
-      (datapackagePath, options, features) -> DatapackageAnalysisTestResults.validResult(),
+      (descriptorLocation, options, features) -> DatapackageAnalysisTestResults.validResult(),
       pathResolver,
       config);
 
@@ -102,11 +102,11 @@ class DwcValidatorTest {
     Path attemptDir = archiveRepository.resolve(DATASET_UUID.toString()).resolve(DATASET_UUID + "." + ATTEMPT);
     Files.createFile(attemptDir.resolve("datapackage.json"));
 
-    AtomicReference<Path> capturedPath = new AtomicReference<>();
+    AtomicReference<String> capturedLocation = new AtomicReference<>();
 
     DwcValidator validator = new DwcValidator(
-      (datapackagePath, options, features) -> {
-        capturedPath.set(datapackagePath);
+      (descriptorLocation, options, features) -> {
+        capturedLocation.set(descriptorLocation);
         return DatapackageAnalysisTestResults.validResult();
       },
       pathResolver,
@@ -117,7 +117,7 @@ class DwcValidatorTest {
     assertTrue(DatapackageAnalysisResult.isValid(result));
 
     // Analyser should have received the archive path, not the unpack path
-    assertTrue(capturedPath.get().startsWith(archiveRepository),
+    assertTrue(Path.of(capturedLocation.get()).startsWith(archiveRepository),
                "Should have used pre-unpacked path, not unpackRepository");
 
     // Nothing should have been written to unpackRepository
@@ -135,11 +135,11 @@ class DwcValidatorTest {
     Path datasetDir = archiveRepository.resolve(DATASET_UUID.toString());
     Files.createFile(datasetDir.resolve("datapackage.json"));
 
-    AtomicReference<Path> capturedPath = new AtomicReference<>();
+    AtomicReference<String> capturedLocation = new AtomicReference<>();
 
     DwcValidator validator = new DwcValidator(
-      (datapackagePath, options, features) -> {
-        capturedPath.set(datapackagePath);
+      (descriptorLocation, options, features) -> {
+        capturedLocation.set(descriptorLocation);
         return DatapackageAnalysisTestResults.validResult();
       },
       pathResolver,
@@ -148,7 +148,7 @@ class DwcValidatorTest {
     DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
 
     assertTrue(DatapackageAnalysisResult.isValid(result));
-    assertEquals(datasetDir.resolve("datapackage.json"), capturedPath.get());
+    assertEquals(datasetDir.resolve("datapackage.json").toString(), capturedLocation.get());
 
     assertFalse(Files.exists(unpackRepository.resolve(DATASET_UUID.toString())),
                 "Unpack directory should not have been created");

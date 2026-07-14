@@ -63,7 +63,7 @@ public class DwcValidator implements Validator {
 
       log.debug("Running analysis for dataset [{}]", request.datasetUuid());
       DatapackageAnalysisResult analysisResult = validator.analyse(
-        resolution.datapackageJson(), config.validationOptions(), AnalysisFeature.ALL_FEATURES);
+        resolution.datapackageJson().toString(), config.validationOptions(), AnalysisFeature.ALL_FEATURES);
       log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), DatapackageAnalysisResult.isValid(analysisResult));
       return analysisResult;
     } catch (Exception e) {

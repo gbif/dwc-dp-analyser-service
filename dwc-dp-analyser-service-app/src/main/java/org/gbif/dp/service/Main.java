@@ -20,7 +20,7 @@ import org.gbif.dp.analysis.api.ValidationOptions;
 import org.gbif.dp.analysis.duckdb.DuckDbDataPackageAnalyser;
 import org.gbif.dp.analysis.duckdb.DuckDbDialectRenderer;
 import org.gbif.dp.analysis.duckdb.DuckDbResourceLoader;
-import org.gbif.dp.descriptor.JacksonDataPackageParser;
+import org.gbif.dp.common.descriptor.JacksonDataPackageParser;
 import org.gbif.dp.duckdb.DuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfigBuilder;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
