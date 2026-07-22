@@ -21,6 +21,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Set;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -36,6 +37,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class HttpRegistryClient implements RegistryClient {
 
   private static final Logger log = LoggerFactory.getLogger(HttpRegistryClient.class);
+
+  private static final Set<Integer> successStatusCodes = Set.of(
+    200, 201, 204
+  );
 
   private final String baseUrl;
   private final String basicAuthHeader;
@@ -70,7 +75,7 @@ public class HttpRegistryClient implements RegistryClient {
 
     try {
       HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-      if (response.statusCode() != 200) {
+      if (successStatusCodes.contains(response.statusCode())) {
         log.warn("Registry PUT returned unexpected status [{}] for dataset [{}] attempt [{}]",
                  response.statusCode(), datasetKey, attempt);
       }
