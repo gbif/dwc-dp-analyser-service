@@ -33,9 +33,13 @@ tasks:
   docker:build:
     desc: Build Docker image (IMAGE=name:tag, MAVEN_UPDATE_SNAPSHOTS=true to force -U)
     cmds:
-      - '{{.CONTAINER_CLI}} build
-        --build-arg MAVEN_UPDATE_SNAPSHOTS={{.MAVEN_UPDATE_SNAPSHOTS | default "false"}}
-        -t {{.IMAGE}} .'
+      - |
+        if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
+          export DOCKER_BUILDKIT=1
+        fi
+        {{.CONTAINER_CLI}} build \
+          --build-arg MAVEN_UPDATE_SNAPSHOTS={{.MAVEN_UPDATE_SNAPSHOTS | default "false"}} \
+          -t {{.IMAGE}} .
 
   docker:push:dist:
     desc: Build and push multi-arch Docker image (reads version from pom.xml)
@@ -47,8 +51,17 @@ tasks:
         sh: mvn help:evaluate -Dexpression=project.version -q -DforceStdout
       FULL_IMAGE: '{{.REGISTRY}}/dwc-dp-analyser-service:{{.POM_VERSION}}'
     cmds:
-      - '{{.CONTAINER_CLI}} build --platform linux/amd64 -t {{.FULL_IMAGE}}-amd64 .'
-      - '{{.CONTAINER_CLI}} build --platform linux/arm64 -t {{.FULL_IMAGE}}-arm64 .'
+      - |
+        if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
+          export DOCKER_BUILDKIT=1
+        fi
+        {{.CONTAINER_CLI}} build --platform linux/amd64 -t {{.FULL_IMAGE}}-amd64 .
+      - |
+        if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
+          export DOCKER_BUILDKIT=1
+        fi
+        {{.CONTAINER_CLI}} build --platform linux/arm64 -t {{.FULL_IMAGE}}-arm64 .
+      - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-arm64'
       - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}} || true'

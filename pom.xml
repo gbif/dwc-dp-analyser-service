@@ -73,7 +73,7 @@
     <!-- Needed to override property from parent pom which set it to 11 -->
     <java.version>17</java.version>
     <!-- Dependency versions -->
-    <dwc-dp-analyser.version>0.0.9-SNAPSHOT</dwc-dp-analyser.version>
+    <dwc-dp-analyser.version>0.0.9</dwc-dp-analyser.version>
     <picocli.version>4.7.6</picocli.version>
     <amqp-client.version>5.25.0</amqp-client.version>
     <slf4j.version>2.0.17</slf4j.version>

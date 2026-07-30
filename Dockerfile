@@ -1,12 +1,21 @@
-# Build stage
-FROM third-party/maven:3-eclipse-temurin-17 AS build
+# syntax=docker/dockerfile:1.4
+# Default to the GBIF internal "third-party" mirror used in CI/CD.
+# Override for local builds: docker build --build-arg BASE_REGISTRY=docker.io ...
+ARG BASE_REGISTRY=third-party
 ARG MAVEN_UPDATE_SNAPSHOTS=false
+
+# Build stage
+FROM ${BASE_REGISTRY}/maven:3-eclipse-temurin-17 AS build
+ARG MAVEN_UPDATE_SNAPSHOTS
 WORKDIR /build
 COPY . .
+
 RUN --mount=type=cache,target=/root/.m2 \
     if [ "$MAVEN_UPDATE_SNAPSHOTS" = "true" ]; then \
+      echo ">> MAVEN_UPDATE_SNAPSHOTS=true — forcing -U"; \
       mvn -U verify; \
     else \
+      echo ">> MAVEN_UPDATE_SNAPSHOTS=false — normal verify"; \
       mvn verify; \
     fi
 
