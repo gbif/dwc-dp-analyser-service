@@ -75,9 +75,11 @@ public class HttpRegistryClient implements RegistryClient {
 
     try {
       HttpResponse<Void> response = httpClient.send(request, HttpResponse.BodyHandlers.discarding());
-      if (successStatusCodes.contains(response.statusCode())) {
+      if (!successStatusCodes.contains(response.statusCode())) {
         log.warn("Registry PUT returned unexpected status [{}] for dataset [{}] attempt [{}]",
                  response.statusCode(), datasetKey, attempt);
+      } else {
+        log.debug("Posted validation report for dataset [{}] attempt [{}]", datasetKey, attempt);
       }
     } catch (Exception e) {
       throw new RegistryClientException(
