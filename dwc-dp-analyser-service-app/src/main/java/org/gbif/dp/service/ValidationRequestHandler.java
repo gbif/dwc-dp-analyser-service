@@ -15,6 +15,8 @@ package org.gbif.dp.service;
 
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.service.api.DwcDpValidationFinished;
+import org.gbif.dp.service.http.RegistryClient;
+import org.gbif.dp.service.http.RegistryClientException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

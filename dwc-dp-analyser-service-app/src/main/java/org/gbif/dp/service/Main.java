@@ -23,9 +23,14 @@ import org.gbif.dp.analysis.duckdb.DuckDbResourceLoader;
 import org.gbif.dp.common.descriptor.JacksonDataPackageParser;
 import org.gbif.dp.duckdb.DuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfigBuilder;
+import org.gbif.dp.service.http.HttpRegistryClient;
+import org.gbif.dp.service.http.RegistryClient;
+import org.gbif.dp.service.http.RetryConfig;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessagePublisher;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMqConnection;
+
+import java.time.Duration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +66,8 @@ public class Main {
         new RabbitMessagePublisher(channel, config.rabbitMq.outputExchange, config.rabbitMq.outputRoutingKey),
         mapper);
 
-      RegistryClient registryClient = new HttpRegistryClient(config.registry.url, config.registry.user, config.registry.password, mapper);
+      RetryConfig retryConfig = new RetryConfig(3, 2.0, Duration.ofSeconds(1));
+      RegistryClient registryClient = new HttpRegistryClient(config.registry.url, config.registry.user, config.registry.password, mapper, retryConfig);
 
       ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher, registryClient);
 

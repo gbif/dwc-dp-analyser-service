@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.gbif.dp.service;
+package org.gbif.dp.service.http;
 
 /**
  * Thrown when a registry HTTP call fails at the transport level.

@@ -14,6 +14,7 @@
 package org.gbif.dp.service;
 
 import org.gbif.dp.service.api.DwcDpValidationFinished;
+import org.gbif.dp.service.http.RegistryClient;
 import org.gbif.dp.service.messaging.InMemoryMessageBus;
 
 import java.util.UUID;
