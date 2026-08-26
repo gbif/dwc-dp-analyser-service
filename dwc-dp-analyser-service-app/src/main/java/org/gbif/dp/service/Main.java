@@ -32,6 +32,8 @@ import org.gbif.dp.service.messaging.rabbitmq.RabbitMqConnection;
 
 import java.time.Duration;
 
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,11 +52,18 @@ public class Main {
     run(config);
   }
 
+  public static ObjectMapper getObjectMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.registerModule(new JavaTimeModule());
+
+    return mapper;
+  }
+
   private static void run(Config config) throws Exception {
     try (RabbitMqConnection rabbit = new RabbitMqConnection(config.rabbitMq)) {
       Channel channel = rabbit.channel();
 
-      ObjectMapper mapper = new ObjectMapper();
+      ObjectMapper mapper = getObjectMapper();
 
       DuckDbConfig duckDbConfig = DuckDbConfigBuilder.defaults()
         .dbMemory(config.duckDbConfig.memory)
