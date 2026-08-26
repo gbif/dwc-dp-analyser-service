@@ -13,12 +13,18 @@
  */
 package org.gbif.dp.service;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
+import org.gbif.dp.analysis.api.AnalysisFeature;
+import org.gbif.dp.analysis.api.DataPackageAnalysisOrchestrator;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.analysis.api.ValidationOptions;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -38,6 +44,32 @@ class DwcValidatorTest {
 
   private DatapackagePathResolver pathResolver;
   private DwcValidator.DwcValidatorConfig config;
+
+  private static DataPackageAnalysisOrchestrator fake(AtomicReference<String> callCapture,
+                                                      AnalysisExecution<DatapackageAnalysisResult> response) {
+    return new DataPackageAnalysisOrchestrator() {
+
+      @Override
+      public DatapackageAnalysisResult analyse(
+        String descriptorLocation,
+        ValidationOptions options,
+        List<AnalysisFeature> features
+      ) throws IOException, SQLException {
+        callCapture.set(descriptorLocation);
+        return response.result();
+      }
+
+      @Override
+      public AnalysisExecution<DatapackageAnalysisResult> analyseWithFullReport(
+        String descriptorLocation,
+        ValidationOptions options,
+        List<AnalysisFeature> features
+      ) throws IOException, SQLException {
+        callCapture.set(descriptorLocation);
+        return response;
+      }
+    };
+  }
 
   @BeforeEach
   void setUp() throws Exception {
@@ -62,14 +94,11 @@ class DwcValidatorTest {
     AtomicReference<String> capturedLocation = new AtomicReference<>();
 
     DwcValidator validator = new DwcValidator(
-      (descriptorLocation, options, features) -> {
-        capturedLocation.set(descriptorLocation);
-        return DatapackageAnalysisTestResults.validResult();
-      },
+      fake(capturedLocation, DatapackageAnalysisTestResults.validResult()),
       pathResolver,
       config);
 
-    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
+    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT)).result();
 
     assertTrue(DatapackageAnalysisResult.isValid(result));
 
@@ -86,7 +115,7 @@ class DwcValidatorTest {
   @Test
   void validate_missingZip_throwsException() {
     DwcValidator validator = new DwcValidator(
-      (descriptorLocation, options, features) -> DatapackageAnalysisTestResults.validResult(),
+      fake(new AtomicReference<>(), DatapackageAnalysisTestResults.validResult()),
       pathResolver,
       config);
 
@@ -105,14 +134,11 @@ class DwcValidatorTest {
     AtomicReference<String> capturedLocation = new AtomicReference<>();
 
     DwcValidator validator = new DwcValidator(
-      (descriptorLocation, options, features) -> {
-        capturedLocation.set(descriptorLocation);
-        return DatapackageAnalysisTestResults.validResult();
-      },
+      fake(capturedLocation, DatapackageAnalysisTestResults.validResult()),
       pathResolver,
       config);
 
-    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
+    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT)).result();
 
     assertTrue(DatapackageAnalysisResult.isValid(result));
 
@@ -138,14 +164,11 @@ class DwcValidatorTest {
     AtomicReference<String> capturedLocation = new AtomicReference<>();
 
     DwcValidator validator = new DwcValidator(
-      (descriptorLocation, options, features) -> {
-        capturedLocation.set(descriptorLocation);
-        return DatapackageAnalysisTestResults.validResult();
-      },
+      fake(capturedLocation, DatapackageAnalysisTestResults.validResult()),
       pathResolver,
       config);
 
-    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT));
+    DatapackageAnalysisResult result = validator.validate(new ValidationRequest(DATASET_UUID, ATTEMPT)).result();
 
     assertTrue(DatapackageAnalysisResult.isValid(result));
     assertEquals(datasetDir.resolve("datapackage.json").toString(), capturedLocation.get());

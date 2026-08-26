@@ -13,6 +13,7 @@
  */
 package org.gbif.dp.service;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.service.api.DwcDpValidationFinished;
 import org.gbif.dp.service.http.RegistryClient;
@@ -99,12 +100,12 @@ class ValidationRequestHandlerTest {
 
   @Test
   void handle_registryClientCalled_withCorrectArguments() throws Exception {
-    DatapackageAnalysisResult expectedResult = DatapackageAnalysisTestResults.validResult();
+    AnalysisExecution<DatapackageAnalysisResult> expectedResult = DatapackageAnalysisTestResults.validResult();
     Validator validator = req -> expectedResult;
 
     AtomicReference<UUID> capturedKey = new AtomicReference<>();
     AtomicReference<Integer> capturedAttempt = new AtomicReference<>();
-    AtomicReference<DatapackageAnalysisResult> capturedResult = new AtomicReference<>();
+    AtomicReference<AnalysisExecution<DatapackageAnalysisResult>> capturedResult = new AtomicReference<>();
 
     RegistryClient capturingClient = (datasetKey, attempt, result) -> {
       capturedKey.set(datasetKey);

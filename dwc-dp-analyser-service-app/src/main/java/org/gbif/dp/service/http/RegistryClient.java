@@ -13,6 +13,7 @@
  */
 package org.gbif.dp.service.http;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import java.util.UUID;
@@ -31,5 +32,5 @@ public interface RegistryClient {
    * @param attempt    crawl attempt number
    * @param result     analysis result to store
    */
-  void putValidationReport(UUID datasetKey, int attempt, DatapackageAnalysisResult result);
+  void putValidationReport(UUID datasetKey, int attempt, AnalysisExecution<DatapackageAnalysisResult> result);
 }

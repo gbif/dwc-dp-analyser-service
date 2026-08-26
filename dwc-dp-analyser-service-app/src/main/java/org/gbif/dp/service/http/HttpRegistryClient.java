@@ -13,6 +13,7 @@
  */
 package org.gbif.dp.service.http;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import java.io.IOException;
@@ -78,7 +79,7 @@ public class HttpRegistryClient implements RegistryClient {
   public void putValidationReport(
     UUID datasetKey,
     int attempt,
-    DatapackageAnalysisResult result
+    AnalysisExecution<DatapackageAnalysisResult> result
   ) {
     URI uri = URI.create(
       baseUrl + "/dataset/" + datasetKey + "/validationreport/" + attempt

@@ -13,6 +13,7 @@
  */
 package org.gbif.dp.service;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.service.api.DwcDpValidationFinished;
 import org.gbif.dp.service.http.RegistryClient;
@@ -46,8 +47,8 @@ public class ValidationRequestHandler {
     log.info("Validating msgId: [{}], dataset: [{}], attempt: [{}]",
              messageId, request.datasetUuid(), request.attempt());
 
-    DatapackageAnalysisResult result = validator.validate(request);
-    boolean valid = DatapackageAnalysisResult.isValid(result);
+    AnalysisExecution<DatapackageAnalysisResult> result = validator.validate(request);
+    boolean valid = result.metadata().valid();
 
     try {
       registryClient.putValidationReport(request.datasetUuid(), request.attempt(), result);
@@ -60,7 +61,7 @@ public class ValidationRequestHandler {
       request.datasetUuid(),
       request.attempt(),
       valid,
-      result
+      result.result()
     ));
 
     log.info("Processed dataset: [{}], attempt: [{}], valid: [{}]",

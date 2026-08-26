@@ -13,6 +13,7 @@
  */
 package org.gbif.dp.service;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
 import org.gbif.dp.analysis.api.AnalysisFeature;
 import org.gbif.dp.analysis.api.DataPackageAnalysisOrchestrator;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
@@ -53,7 +54,7 @@ public class DwcValidator implements Validator {
   }
 
   @Override
-  public DatapackageAnalysisResult validate(ValidationRequest request) throws Exception {
+  public AnalysisExecution<DatapackageAnalysisResult> validate(ValidationRequest request) throws Exception {
     Path unpackDir = null;
 
     try {
@@ -62,9 +63,9 @@ public class DwcValidator implements Validator {
       unpackDir = resolution.unpackDirToCleanUp();
 
       log.debug("Running analysis for dataset [{}]", request.datasetUuid());
-      DatapackageAnalysisResult analysisResult = validator.analyse(
+      AnalysisExecution<DatapackageAnalysisResult> analysisResult = validator.analyseWithFullReport(
         resolution.datapackageJson().toString(), config.validationOptions(), AnalysisFeature.ALL_FEATURES);
-      log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), DatapackageAnalysisResult.isValid(analysisResult));
+      log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), analysisResult.metadata().valid());
       return analysisResult;
     } catch (Exception e) {
       throw new RuntimeException(String.format("Runtime error - Unzip/Validation failed for dataset [%s]", request.datasetUuid()), e);

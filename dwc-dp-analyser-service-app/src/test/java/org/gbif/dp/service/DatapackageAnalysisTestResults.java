@@ -13,16 +13,20 @@
  */
 package org.gbif.dp.service;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
+import org.gbif.dp.analysis.api.AnalysisFeature;
+import org.gbif.dp.analysis.api.AnalysisMetadata;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 import org.gbif.dp.analysis.api.PrimaryKeyViolation;
 import org.gbif.dp.analysis.api.ResourceAnalysisResult;
 import org.gbif.dp.validator.api.DescriptorValidationResult;
 import org.gbif.dp.validator.api.EmlValidationResult;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class DatapackageAnalysisTestResults {
-  public static DatapackageAnalysisResult invalidResult() {
+  public static AnalysisExecution<DatapackageAnalysisResult> invalidResult() {
     List<ResourceAnalysisResult> resourceAnalysisResults = List.of(new ResourceAnalysisResult(
       "test",
       List.of(),
@@ -30,10 +34,17 @@ public class DatapackageAnalysisTestResults {
       List.of(),
       List.of(),
       1));
-    return new DatapackageAnalysisResult(DescriptorValidationResult.ok(), EmlValidationResult.absent(), resourceAnalysisResults);
+    return new AnalysisExecution<>(
+      new DatapackageAnalysisResult(DescriptorValidationResult.ok(), EmlValidationResult.absent(), resourceAnalysisResults),
+      new AnalysisMetadata(LocalDateTime.now(), LocalDateTime.now(), AnalysisFeature.ALL_FEATURES, false)
+    );
   }
 
-  public static DatapackageAnalysisResult validResult() {
-    return new DatapackageAnalysisResult(DescriptorValidationResult.ok(), EmlValidationResult.absent(), List.of());
+  public static AnalysisExecution<DatapackageAnalysisResult> validResult() {
+    return
+      new AnalysisExecution<>(
+        new DatapackageAnalysisResult(DescriptorValidationResult.ok(), EmlValidationResult.absent(), List.of()),
+        new AnalysisMetadata(LocalDateTime.now(), LocalDateTime.now(), AnalysisFeature.ALL_FEATURES, true)
+      );
   }
 }
