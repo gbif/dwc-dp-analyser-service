@@ -65,7 +65,7 @@ public class DwcValidator implements Validator {
       log.debug("Running analysis for dataset [{}]", request.datasetUuid());
       AnalysisExecution<DatapackageAnalysisResult> analysisResult = validator.analyseWithFullReport(
         resolution.datapackageJson().toString(), config.validationOptions(), AnalysisFeature.ALL_FEATURES);
-      log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), analysisResult.metadata().valid());
+      log.debug("Validated [{}], valid: [{}]", request.datasetUuid(), analysisResult.metadata().isValid());
       return analysisResult;
     } catch (Exception e) {
       throw new RuntimeException(String.format("Runtime error - Unzip/Validation failed for dataset [%s]", request.datasetUuid()), e);

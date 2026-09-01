@@ -48,7 +48,7 @@ public class ValidationRequestHandler {
              messageId, request.datasetUuid(), request.attempt());
 
     AnalysisExecution<DatapackageAnalysisResult> result = validator.validate(request);
-    boolean valid = result.metadata().valid();
+    boolean valid = result.metadata().isValid();
 
     try {
       registryClient.putValidationReport(request.datasetUuid(), request.attempt(), result);

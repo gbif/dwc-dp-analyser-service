@@ -24,6 +24,7 @@ import org.gbif.dp.common.descriptor.JacksonDataPackageParser;
 import org.gbif.dp.duckdb.DuckDbConfig;
 import org.gbif.dp.duckdb.DuckDbConfigBuilder;
 import org.gbif.dp.service.http.HttpRegistryClient;
+import org.gbif.dp.service.http.LocalDateTimeMillisSerializer;
 import org.gbif.dp.service.http.RegistryClient;
 import org.gbif.dp.service.http.RetryConfig;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMessageConsumer;
@@ -31,13 +32,14 @@ import org.gbif.dp.service.messaging.rabbitmq.RabbitMessagePublisher;
 import org.gbif.dp.service.messaging.rabbitmq.RabbitMqConnection;
 
 import java.time.Duration;
-
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.rabbitmq.client.Channel;
 
 import picocli.CommandLine;
@@ -53,8 +55,12 @@ public class Main {
   }
 
   public static ObjectMapper getObjectMapper() {
+    JavaTimeModule javaTimeModule = new JavaTimeModule();
+    javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeMillisSerializer());
+
     ObjectMapper mapper = new ObjectMapper();
-    mapper.registerModule(new JavaTimeModule());
+    mapper.registerModule(javaTimeModule);
+    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     return mapper;
   }

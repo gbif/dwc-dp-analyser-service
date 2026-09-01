@@ -1,3 +1,16 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.gbif.dp.service.http;
 
 import org.gbif.dp.analysis.api.AnalysisExecution;
@@ -19,12 +32,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,6 +44,37 @@ class HttpRegistryClientTest {
 
   @Test
   void testSerializationOfReport() throws JsonProcessingException {
+    AnalysisExecution<DatapackageAnalysisResult> report = getDatapackageAnalysisResultAnalysisExecution();
+
+    ObjectMapper mapper = Main.getObjectMapper();
+
+    String reportSerialized = mapper.writeValueAsString(report);
+    assertNotNull(reportSerialized);
+  }
+
+  @Test
+  void testSerializedDateFormat() throws JsonProcessingException {
+    AnalysisExecution<DatapackageAnalysisResult> report = getDatapackageAnalysisResultAnalysisExecution();
+    ObjectMapper mapper = Main.getObjectMapper();
+
+    String reportSerialized = mapper.writeValueAsString(report);
+    JsonNode root = mapper.readTree(reportSerialized);
+
+    String iso8601MillisUtcPattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}\\+00:00$";
+
+    JsonNode metadata = root.get("metadata");
+    assertNotNull(metadata, "metadata should be present in serialized report");
+
+    String started = metadata.get("started").asText();
+    String finished = metadata.get("finished").asText();
+
+    assertTrue(started.matches(iso8601MillisUtcPattern),
+               "started should be ISO-8601 with millis+00:00, was: " + started);
+    assertTrue(finished.matches(iso8601MillisUtcPattern),
+               "finished should be ISO-8601 with millis+00:00, was: " + finished);
+  }
+
+  private static AnalysisExecution<DatapackageAnalysisResult> getDatapackageAnalysisResultAnalysisExecution() {
     DatapackageAnalysisResult result = new DatapackageAnalysisResult(
       new DescriptorValidationResult(
         List.of(
@@ -100,11 +143,7 @@ class HttpRegistryClientTest {
     AnalysisExecution<DatapackageAnalysisResult> report =
         new AnalysisExecution<>(
           result, analysisMetadata);
-
-    ObjectMapper mapper = Main.getObjectMapper();
-
-    String reportSerialized = mapper.writeValueAsString(report);
-    assertNotNull(reportSerialized);
+    return report;
   }
 
 }
