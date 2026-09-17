@@ -6,9 +6,9 @@ POM_VERSION=$2
 IMAGE_NAME="dwc-dp-analyser-service"
 IMAGE="docker.gbif.org/${IMAGE_NAME}:${POM_VERSION}"
 IMAGE_LATEST="docker.gbif.org/${IMAGE_NAME}:latest"
+BASE_REGISTRY="docker.gbif.org/third-party"
 
-echo "Building Docker image: ${IMAGE}"
-docker build -t "${IMAGE}" .
+./build/docker-image.sh "${IMAGE}" "${BASE_REGISTRY}"
 
 echo "Pushing Docker image to the repository"
 docker push "${IMAGE}"

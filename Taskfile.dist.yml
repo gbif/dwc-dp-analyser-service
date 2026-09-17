@@ -2,6 +2,7 @@ version: '3'
 
 vars:
   IMAGE: '{{.IMAGE | default "dwc-dp-analyser-service:latest"}}'
+  BASE_REGISTRY: '{{.BASE_REGISTRY | default "docker.gbif.org/third-party"}}'
   CONTAINER_CLI:
     sh: |
       if command -v podman >/dev/null 2>&1; then
@@ -31,18 +32,42 @@ tasks:
       - mvn verify
 
   docker:build:
-    desc: Build Docker image (IMAGE=name:tag, MAVEN_UPDATE_SNAPSHOTS=true to force -U)
+    desc: Build Docker image from the already-built runner jar (IMAGE=name:tag)
     cmds:
       - |
+        JAR_DIR="dwc-dp-analyser-service-app/target"
+        JAR_PATTERN="${JAR_DIR}/*-runner.jar"
+        JARS=()
+        while IFS= read -r jar; do
+          JARS+=("$jar")
+        done < <(compgen -G "$JAR_PATTERN" || true)
+
+        if [ "${#JARS[@]}" -eq 0 ]; then
+          echo >&2 "ERROR: Could not find ${JAR_PATTERN}"
+          echo >&2 "Run 'mvn package' before building the Docker image."
+          exit 1
+        fi
+
+        if [ "${#JARS[@]}" -gt 1 ]; then
+          echo >&2 "ERROR: Found multiple runner JARs:"
+          printf >&2 '  %s\n' "${JARS[@]}"
+          echo >&2 "Run 'mvn clean package' to produce an unambiguous build."
+          exit 1
+        fi
+
+        JAR_FILE="${JARS[0]}"
+
         if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
           export DOCKER_BUILDKIT=1
         fi
+
         {{.CONTAINER_CLI}} build \
-          --build-arg MAVEN_UPDATE_SNAPSHOTS={{.MAVEN_UPDATE_SNAPSHOTS | default "false"}} \
+          --build-arg BASE_REGISTRY={{.BASE_REGISTRY}} \
+          --build-arg JAR_FILE="${JAR_FILE}" \
           -t {{.IMAGE}} .
 
   docker:push:dist:
-    desc: Build and push multi-arch Docker image (reads version from pom.xml)
+    desc: Build and push multi-arch Docker image from the already-built runner jar
     prompt: Do you want to build and push the multi-arch image to the registry?
     requires:
       vars: [REGISTRY]
@@ -52,19 +77,32 @@ tasks:
       FULL_IMAGE: '{{.REGISTRY}}/dwc-dp-analyser-service:{{.POM_VERSION}}'
     cmds:
       - |
+        JAR_FILE=$(compgen -G "dwc-dp-analyser-service-app/target/*-runner.jar" | head -n 1)
+        if [ -z "$JAR_FILE" ]; then
+          echo >&2 "ERROR: Could not find dwc-dp-analyser-service-app/target/*-runner.jar"
+          echo >&2 "Run 'mvn package' before building the Docker image."
+          exit 1
+        fi
         if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
           export DOCKER_BUILDKIT=1
         fi
-        {{.CONTAINER_CLI}} build --platform linux/amd64 -t {{.FULL_IMAGE}}-amd64 .
+        {{.CONTAINER_CLI}} build \
+          --platform linux/amd64 \
+          --build-arg BASE_REGISTRY={{.BASE_REGISTRY}} \
+          --build-arg JAR_FILE="$JAR_FILE" \
+          -t {{.FULL_IMAGE}}-amd64 .
       - |
+        JAR_FILE=$(compgen -G "dwc-dp-analyser-service-app/target/*-runner.jar" | head -n 1)
         if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
           export DOCKER_BUILDKIT=1
         fi
-        {{.CONTAINER_CLI}} build --platform linux/arm64 -t {{.FULL_IMAGE}}-arm64 .
-      - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
+        {{.CONTAINER_CLI}} build \
+          --platform linux/arm64 \
+          --build-arg BASE_REGISTRY={{.BASE_REGISTRY}} \
+          --build-arg JAR_FILE="$JAR_FILE" \
+          -t {{.FULL_IMAGE}}-arm64 .
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-arm64'
-      - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}} || true'
       - |
         if [ "{{.CONTAINER_CLI}}" = "podman" ]; then
           {{.CONTAINER_CLI}} manifest create {{.FULL_IMAGE}}
@@ -74,6 +112,8 @@ tasks:
         else
           {{.CONTAINER_CLI}} buildx imagetools create -t {{.FULL_IMAGE}} {{.FULL_IMAGE}}-amd64 {{.FULL_IMAGE}}-arm64
         fi
+      - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}}-amd64 || true'
+      - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}}-arm64 || true'
 
   docker:run:
     desc: Run the Docker image
