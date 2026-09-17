@@ -252,4 +252,4 @@ and the unpacked directory is deleted after validation completes.
 mvn test
 ```
 
-Tests use `InMemoryMessageBus` — no RabbitMQ instance required.
+Tests use `InMemoryMessageBus` — no RabbitMQ instance required. (see Docker compose for local in session test)

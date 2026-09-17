@@ -34,7 +34,7 @@ pipeline {
       }
       steps {
         script {
-          error('Releases are only allowed from the master branch.')
+          error("Releases are only allowed from the master branch. Current branch: '${env.BRANCH_NAME}'")
         }
       }
     }
@@ -46,8 +46,22 @@ pipeline {
           // Example: feature/foo -> 0.0.7-FEATURE-FOO-SNAPSHOT
           if (env.BRANCH_NAME != 'dev' && env.BRANCH_NAME != 'master' && !params.RELEASE) {
             def suffix = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9.-]', '-').toUpperCase()
+
+            if (!suffix?.trim()) {
+              error("Could not derive a valid version suffix from branch '${env.BRANCH_NAME}'")
+            }
+
             sh """
+              set -e
               BASE_VERSION=\$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT//')
+
+              if [ -z "\${BASE_VERSION}" ]; then
+                echo >&2 "ERROR: Maven returned an empty project version while preparing branch '${env.BRANCH_NAME}'."
+                exit 1
+              fi
+
+              echo "Using feature branch Maven version: \${BASE_VERSION}-${suffix}-SNAPSHOT"
+
               mvn versions:set \
                 -DnewVersion=\${BASE_VERSION}-${suffix}-SNAPSHOT \
                 -DgenerateBackupPoms=false \
@@ -60,7 +74,12 @@ pipeline {
             script: "./build/get-version.sh ${params.RELEASE}"
           ).trim()
 
-          echo "Build version: ${env.VERSION}"
+          if (!env.VERSION) {
+            error("Resolved build version is empty. build/get-version.sh did not return a Maven project version.")
+          }
+
+          echo "Resolved build version: ${env.VERSION}"
+          echo "Release build: ${params.RELEASE}"
         }
       }
     }
@@ -130,7 +149,23 @@ pipeline {
 
     stage('Build and push Docker image') {
       steps {
-        sh './build/docker-build.sh ${RELEASE} ${VERSION}'
+        script {
+          if (!env.VERSION?.trim()) {
+            error("Docker build cannot start because VERSION is empty. Check the Setup stage and build/get-version.sh.")
+          }
+
+          def releaseArg = params.RELEASE ? 'true' : 'false'
+
+          echo "Docker build inputs:"
+          echo "  release: ${releaseArg}"
+          echo "  version: ${env.VERSION}"
+          echo "  image:   docker.gbif.org/dwc-dp-analyser-service:${env.VERSION}"
+
+          sh """
+            set -e
+            ./build/docker-build.sh '${releaseArg}' '${env.VERSION}'
+          """
+        }
       }
     }
   }
@@ -140,7 +175,7 @@ pipeline {
       echo 'Pipeline executed successfully!'
     }
     failure {
-      echo 'Pipeline execution failed!'
+      echo 'Pipeline execution failed! See the failing command above for the original error output.'
     }
     cleanup {
       deleteDir()
