@@ -8,9 +8,12 @@ data/
 # Helm / k8s — not needed for the jar build
 helm/
 
-# Build artifacts (let Maven cache mount handle this, not host state)
-target/
-**/target/
+# Maven build output
+**/target/**
+
+# Docker needs the already-built service runner jar
+!dwc-dp-analyser-service-app/target/
+!dwc-dp-analyser-service-app/target/*-runner.jar
 
 # Scripts for local compose, not part of the build
 scripts/
