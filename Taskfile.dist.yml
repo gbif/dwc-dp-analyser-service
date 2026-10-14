@@ -1,3 +1,4 @@
+
 version: '3'
 
 vars:
@@ -34,37 +35,52 @@ tasks:
   docker:build:
     desc: Build Docker image from the already-built runner jar (IMAGE=name:tag)
     cmds:
+      - task: _docker:build
+        vars:
+          BUILD_IMAGE: '{{.IMAGE}}'
+
+  _docker:build:
+    internal: true
+    requires:
+      vars: [BUILD_IMAGE]
+    cmds:
       - |
         JAR_DIR="dwc-dp-analyser-service-app/target"
-        JAR_PATTERN="${JAR_DIR}/*-runner.jar"
-        JARS=()
-        while IFS= read -r jar; do
-          JARS+=("$jar")
-        done < <(compgen -G "$JAR_PATTERN" || true)
 
-        if [ "${#JARS[@]}" -eq 0 ]; then
-          echo >&2 "ERROR: Could not find ${JAR_PATTERN}"
+        # Resolve runner JAR using POSIX-compatible globbing.
+        set -- "$JAR_DIR"/*-runner.jar
+
+        if [ ! -f "$1" ]; then
+          echo >&2 "ERROR: Could not find $JAR_DIR/*-runner.jar"
           echo >&2 "Run 'mvn package' before building the Docker image."
           exit 1
         fi
 
-        if [ "${#JARS[@]}" -gt 1 ]; then
+        if [ "$#" -gt 1 ]; then
           echo >&2 "ERROR: Found multiple runner JARs:"
-          printf >&2 '  %s\n' "${JARS[@]}"
+          printf >&2 '  %s\n' "$@"
           echo >&2 "Run 'mvn clean package' to produce an unambiguous build."
           exit 1
         fi
 
-        JAR_FILE="${JARS[0]}"
+        JAR_FILE="$1"
 
         if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
           export DOCKER_BUILDKIT=1
         fi
 
+        # Add platform argument only when explicitly supplied.
+        set --
+
+        if [ -n "{{.PLATFORM | default ""}}" ]; then
+          set -- --platform "{{.PLATFORM}}"
+        fi
+
         {{.CONTAINER_CLI}} build \
-          --build-arg BASE_REGISTRY={{.BASE_REGISTRY}} \
-          --build-arg JAR_FILE="${JAR_FILE}" \
-          -t {{.IMAGE}} .
+          "$@" \
+          --build-arg BASE_REGISTRY="{{.BASE_REGISTRY}}" \
+          --build-arg JAR_FILE="$JAR_FILE" \
+          -t "{{.BUILD_IMAGE}}" .
 
   docker:push:dist:
     desc: Build and push multi-arch Docker image from the already-built runner jar
@@ -76,42 +92,38 @@ tasks:
         sh: mvn help:evaluate -Dexpression=project.version -q -DforceStdout
       FULL_IMAGE: '{{.REGISTRY}}/dwc-dp-analyser-service:{{.POM_VERSION}}'
     cmds:
-      - |
-        JAR_FILE=$(compgen -G "dwc-dp-analyser-service-app/target/*-runner.jar" | head -n 1)
-        if [ -z "$JAR_FILE" ]; then
-          echo >&2 "ERROR: Could not find dwc-dp-analyser-service-app/target/*-runner.jar"
-          echo >&2 "Run 'mvn package' before building the Docker image."
-          exit 1
-        fi
-        if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
-          export DOCKER_BUILDKIT=1
-        fi
-        {{.CONTAINER_CLI}} build \
-          --platform linux/amd64 \
-          --build-arg BASE_REGISTRY={{.BASE_REGISTRY}} \
-          --build-arg JAR_FILE="$JAR_FILE" \
-          -t {{.FULL_IMAGE}}-amd64 .
-      - |
-        JAR_FILE=$(compgen -G "dwc-dp-analyser-service-app/target/*-runner.jar" | head -n 1)
-        if [ "{{.CONTAINER_CLI}}" = "docker" ]; then
-          export DOCKER_BUILDKIT=1
-        fi
-        {{.CONTAINER_CLI}} build \
-          --platform linux/arm64 \
-          --build-arg BASE_REGISTRY={{.BASE_REGISTRY}} \
-          --build-arg JAR_FILE="$JAR_FILE" \
-          -t {{.FULL_IMAGE}}-arm64 .
+      # Build both architectures.
+      - task: _docker:build
+        vars:
+          BUILD_IMAGE: '{{.FULL_IMAGE}}-amd64'
+          PLATFORM: linux/amd64
+
+      - task: _docker:build
+        vars:
+          BUILD_IMAGE: '{{.FULL_IMAGE}}-arm64'
+          PLATFORM: linux/arm64
+
+      # Push architecture-specific images.
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-amd64'
       - '{{.CONTAINER_CLI}} push {{.FULL_IMAGE}}-arm64'
+
+      # Publish the multi-architecture manifest.
       - |
         if [ "{{.CONTAINER_CLI}}" = "podman" ]; then
-          {{.CONTAINER_CLI}} manifest create {{.FULL_IMAGE}}
-          {{.CONTAINER_CLI}} manifest add {{.FULL_IMAGE}} {{.FULL_IMAGE}}-amd64
-          {{.CONTAINER_CLI}} manifest add {{.FULL_IMAGE}} {{.FULL_IMAGE}}-arm64
-          {{.CONTAINER_CLI}} manifest push {{.FULL_IMAGE}}
+          {{.CONTAINER_CLI}} manifest rm "{{.FULL_IMAGE}}" 2>/dev/null || true
+
+          {{.CONTAINER_CLI}} manifest create "{{.FULL_IMAGE}}"
+          {{.CONTAINER_CLI}} manifest add "{{.FULL_IMAGE}}" "{{.FULL_IMAGE}}-amd64"
+          {{.CONTAINER_CLI}} manifest add "{{.FULL_IMAGE}}" "{{.FULL_IMAGE}}-arm64"
+          {{.CONTAINER_CLI}} manifest push --all "{{.FULL_IMAGE}}"
         else
-          {{.CONTAINER_CLI}} buildx imagetools create -t {{.FULL_IMAGE}} {{.FULL_IMAGE}}-amd64 {{.FULL_IMAGE}}-arm64
+          {{.CONTAINER_CLI}} buildx imagetools create \
+            -t "{{.FULL_IMAGE}}" \
+            "{{.FULL_IMAGE}}-amd64" \
+            "{{.FULL_IMAGE}}-arm64"
         fi
+
+      # Remove local architecture-specific images.
       - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}}-amd64 || true'
       - '{{.CONTAINER_CLI}} image rm {{.FULL_IMAGE}}-arm64 || true'
 
@@ -120,7 +132,8 @@ tasks:
     requires:
       vars: [ARCHIVE_REPOSITORY, WORKDIR, REGISTRY_URL, REGISTRY_USER, REGISTRY_PASSWORD]
     cmds:
-      - '{{.CONTAINER_CLI}} run --rm
+      - >-
+        {{.CONTAINER_CLI}} run --rm
         --memory=4g
         --memory-swap=4g
         -v {{.ARCHIVE_REPOSITORY}}:/data/datapackages
@@ -137,10 +150,10 @@ tasks:
         -e INPUT_QUEUE={{.INPUT_QUEUE | default "dwcdp-validator"}}
         -e OUTPUT_EXCHANGE={{.OUTPUT_EXCHANGE | default "crawler"}}
         -e OUTPUT_ROUTING_KEY={{.OUTPUT_ROUTING_KEY | default "crawl.dwcdp.validation.finished"}}
-        {{.IMAGE}}'
+        {{.IMAGE}}
 
   docker:run:local:
-    desc: Run with archive and unpack repos pointing to ~/data
+    desc: Run with archive and work directories pointing to ~/data
     vars:
       GATEWAY:
         sh: bash scripts/gateway.sh | tee
@@ -150,16 +163,16 @@ tasks:
       - task: docker:run
         vars:
           ARCHIVE_REPOSITORY: '{{.HOME}}/data/datapackages'
-          UNPACK_REPOSITORY: '{{.HOME}}/data/datapackages-unpacked'
+          WORKDIR: '{{.HOME}}/data/datapackages-unpacked'
           RABBIT_HOST: '{{.GATEWAY}}'
 
   local:
-    desc: DwcDp Analyse Service locally, including required services such as RabbitMQ and a mock for registry
+    desc: Run locally with RabbitMQ and mock registry
     cmds:
       - '{{.CONTAINER_CLI}} compose -f docker-compose.yml up'
 
   dist:
-    desc: Build jar and Docker image
+    desc: Build jar and push multi-arch Docker image
     cmds:
       - task: package
       - task: docker:push:dist
