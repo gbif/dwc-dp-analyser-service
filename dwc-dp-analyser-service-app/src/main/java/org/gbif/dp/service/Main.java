@@ -82,7 +82,7 @@ public class Main {
         mapper);
 
       RetryConfig retryConfig = new RetryConfig(3, 2.0, Duration.ofSeconds(1));
-      RegistryClient registryClient = new HttpRegistryClient(config.registry.url, config.registry.user, config.registry.password, mapper, retryConfig);
+      RegistryClient registryClient = getRegistryClient(config, mapper, retryConfig);
 
       ValidationRequestHandler handler = new ValidationRequestHandler(validator, publisher, registryClient);
 
@@ -107,6 +107,20 @@ public class Main {
       }));
       Thread.currentThread().join();
     }
+  }
+
+  private static RegistryClient getRegistryClient(Config config, ObjectMapper mapper, RetryConfig retryConfig) {
+    if (config.registry.url == null || config.registry.url.isEmpty()) {
+      log.info("DwC registry url is null or empty, skipping ValidationReport uploads to registry");
+      return (datasetKey, attempt, result) -> {
+        log.debug("Skipping RegistryClient due to empty url");
+      };
+    }
+    return new HttpRegistryClient(config.registry.url,
+                                  config.registry.user,
+                                  config.registry.password,
+                                  mapper,
+                                  retryConfig);
   }
 
   private static DwcValidator createValidator(Config config, DuckDbConfig duckDbConfig) {

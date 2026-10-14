@@ -39,14 +39,18 @@ class DatapackagePathResolverTest {
     return archiveRepository.resolve(DATASET_UUID.toString());
   }
 
-  private Path attemptDir() {
+  private Path mixedUuidAttemptDir() {
     return datasetDir().resolve(DATASET_UUID + "." + ATTEMPT);
+  }
+
+  private Path explicitAttemptDir() {
+    return datasetDir().resolve(Integer.toString(ATTEMPT));
   }
 
   @Test
   void resolve_priority1_attemptSpecificUnpacked() throws Exception {
-    Files.createDirectories(attemptDir());
-    Path expected = attemptDir().resolve("datapackage.json");
+    Files.createDirectories(mixedUuidAttemptDir());
+    Path expected = mixedUuidAttemptDir().resolve("datapackage.json");
     Files.createFile(expected);
 
     DatapackagePathResolver.Resolution resolution = resolver().resolve(DATASET_UUID, ATTEMPT);
@@ -56,15 +60,14 @@ class DatapackagePathResolverTest {
   }
 
   @Test
-  void resolve_priority1_takesPrecedenceOverPriority2() throws Exception {
-    // Both an attempt-specific and a latest-pattern datapackage.json exist —
-    // attempt-specific must win.
-    Files.createDirectories(attemptDir());
-    Path attemptSpecific = attemptDir().resolve("datapackage.json");
+  void resolve_mixedPath_takesPrecedenceOverExplicitUuidAndAttempt() throws Exception {
+    Files.createDirectories(mixedUuidAttemptDir());
+    Path attemptSpecific = mixedUuidAttemptDir().resolve("datapackage.json");
     Files.createFile(attemptSpecific);
 
-    Path latestPattern = datasetDir().resolve("datapackage.json");
-    Files.createFile(latestPattern);
+    Files.createDirectories(explicitAttemptDir());
+    Path explicitPattern = explicitAttemptDir().resolve("datapackage.json");
+    Files.createFile(explicitPattern);
 
     DatapackagePathResolver.Resolution resolution = resolver().resolve(DATASET_UUID, ATTEMPT);
 
@@ -72,7 +75,19 @@ class DatapackagePathResolverTest {
   }
 
   @Test
-  void resolve_priority2_latestPatternUnpacked() throws Exception {
+  void resolve_explicitPath() throws Exception {
+    Files.createDirectories(explicitAttemptDir());
+    Path expected = explicitAttemptDir().resolve("datapackage.json");
+    Files.createFile(expected);
+
+    DatapackagePathResolver.Resolution resolution = resolver().resolve(DATASET_UUID, ATTEMPT);
+
+    assertEquals(expected, resolution.datapackageJson());
+    assertNull(resolution.unpackDirToCleanUp(), "No unzip happened, nothing to clean up");
+  }
+
+  @Test
+  void resolve_latestPatternUnpacked() throws Exception {
     Files.createDirectories(datasetDir());
     Path expected = datasetDir().resolve("datapackage.json");
     Files.createFile(expected);
@@ -84,9 +99,9 @@ class DatapackagePathResolverTest {
   }
 
   @Test
-  void resolve_priority3_dwcdpArchive_unzipsAndReturnsCleanupDir() throws Exception {
-    Files.createDirectories(attemptDir());
-    Path zipDest = attemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
+  void resolve_dwcdpArchive_unzipsAndReturnsCleanupDir() throws Exception {
+    Files.createDirectories(mixedUuidAttemptDir());
+    Path zipDest = mixedUuidAttemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
 
     try (var in = getClass().getResourceAsStream("/fixtures/test-dataset.dwcdp")) {
       assertNotNull(in, "Fixture zip(dwcdp) not found in test resources");
@@ -105,9 +120,9 @@ class DatapackagePathResolverTest {
   }
 
   @Test
-  void resolve_priority4_zipArchive_usedWhenDwcdpAbsent() throws Exception {
-    Files.createDirectories(attemptDir());
-    Path zipDest = attemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".zip");
+  void resolve_zipArchive_usedWhenDwcdpAbsent() throws Exception {
+    Files.createDirectories(mixedUuidAttemptDir());
+    Path zipDest = mixedUuidAttemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".zip");
 
     try (var in = getClass().getResourceAsStream("/fixtures/test-dataset.zip")) {
       assertNotNull(in, "Fixture zip(.zip) not found in test resources");
@@ -125,11 +140,11 @@ class DatapackagePathResolverTest {
   }
 
   @Test
-  void resolve_priority3_takesPrecedenceOverPriority4() throws Exception {
+  void resolve_Dwcdp_takesPrecedenceOverZip() throws Exception {
     // Both .dwcdp and .zip present — .dwcdp must win
-    Files.createDirectories(attemptDir());
-    Path dwcdpDest = attemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
-    Path zipDest = attemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".zip");
+    Files.createDirectories(mixedUuidAttemptDir());
+    Path dwcdpDest = mixedUuidAttemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".dwcdp");
+    Path zipDest = mixedUuidAttemptDir().resolve(DATASET_UUID + "." + ATTEMPT + ".zip");
 
     try (var in = getClass().getResourceAsStream("/fixtures/test-dataset.dwcdp")) {
       assertNotNull(in, "Fixture zip(dwcdp) not found in test resources");
@@ -162,8 +177,8 @@ class DatapackagePathResolverTest {
   @Test
   void resolve_differentAttempt_doesNotMatchOtherAttemptsFiles() throws Exception {
     // Place files for attempt 1, then request attempt 2 — should fall through to not-found
-    Files.createDirectories(attemptDir());
-    Files.createFile(attemptDir().resolve("datapackage.json"));
+    Files.createDirectories(mixedUuidAttemptDir());
+    Files.createFile(mixedUuidAttemptDir().resolve("datapackage.json"));
 
     assertThrows(IOException.class,
                  () -> resolver().resolve(DATASET_UUID, ATTEMPT + 1));

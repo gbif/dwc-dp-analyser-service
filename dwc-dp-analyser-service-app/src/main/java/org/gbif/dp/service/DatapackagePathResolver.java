@@ -63,20 +63,27 @@ public class DatapackagePathResolver {
       return new Resolution(attemptUnpacked, null);
     }
 
-    // 2. {uuid}/datapackage.json (latest pattern)
+    // 2. {uuid}/{attempt}/datapackage.json
+    attemptUnpacked = datasetDir.resolve(Integer.toString(attempt)).resolve(DATAPACKAGE_JSON);
+    if (Files.exists(attemptUnpacked)) {
+      log.debug("Resolved via attempt-specific unpacked datapackage [{}]", attemptUnpacked);
+      return new Resolution(attemptUnpacked, null);
+    }
+
+    // 3. {uuid}/datapackage.json (latest pattern)
     Path latestUnpacked = datasetDir.resolve(DATAPACKAGE_JSON);
     if (Files.exists(latestUnpacked)) {
       log.debug("Resolved via latest-pattern unpacked datapackage [{}]", latestUnpacked);
       return new Resolution(latestUnpacked, null);
     }
 
-    // 3. {uuid}/{uuid}.{attempt}/{uuid}.{attempt}.dwcdp
+    // 4. {uuid}/{uuid}.{attempt}/{uuid}.{attempt}.dwcdp
     Path dwcdpArchive = datasetDir.resolve(attemptName).resolve(attemptName + ".dwcdp");
     if (Files.exists(dwcdpArchive)) {
       return unzipAndResolve(datasetUuid, attemptName, dwcdpArchive);
     }
 
-    // 4. {uuid}/{uuid}.{attempt}/{uuid}.{attempt}.zip
+    // 5. {uuid}/{uuid}.{attempt}/{uuid}.{attempt}.zip
     Path zipArchive = datasetDir.resolve(attemptName).resolve(attemptName + ".zip");
     if (Files.exists(zipArchive)) {
       return unzipAndResolve(datasetUuid, attemptName, zipArchive);
