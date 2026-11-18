@@ -41,7 +41,7 @@ class ValidationRequestHandlerTest {
   @BeforeEach
   void setUp() {
     capturedPublish = new AtomicReference<>();
-    ObjectMapper mapper = new ObjectMapper();
+    ObjectMapper mapper = Main.getMessageMapper();
     publisher = new ValidationFinishedPublisher(
       msg -> capturedPublish.set(mapper.readValue(msg, DwcDpValidationFinished.class)), mapper);
     noOpRegistryClient = (datasetKey, attempt, result) -> {};
@@ -58,6 +58,10 @@ class ValidationRequestHandlerTest {
     assertNotNull(published, "Expected a message to be published");
     assertEquals(REQUEST.datasetUuid(), published.getDatasetUuid());
     assertEquals(REQUEST.attempt(), published.getAttempt());
+    // The whole AnalysisExecution travels: result, metadata (with isValid) and version.
+    assertNotNull(published.getValidationReport().result());
+    assertEquals(published.isValid(), published.getValidationReport().metadata().isValid());
+    assertNotNull(published.getValidationReport().version());
   }
 
   @Test

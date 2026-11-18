@@ -42,8 +42,22 @@ public class RabbitMqConnection implements AutoCloseable {
     declareTopology(channel, cfg);
   }
 
-  private void declareTopology(Channel channel, Config.RabbitMq cfg) throws IOException {
+  /**
+   * Declares the input queue and, when configured, binds it: the consumer owns its queue and its
+   * binding, so senders only need an exchange and a routing key.
+   */
+  static void declareTopology(Channel channel, Config.RabbitMq cfg) throws IOException {
     channel.queueDeclare(cfg.inputQueue, true, false, false, null);
+    boolean hasExchange = cfg.inputExchange != null && !cfg.inputExchange.isBlank();
+    boolean hasRoutingKey = cfg.inputRoutingKey != null && !cfg.inputRoutingKey.isBlank();
+    if (hasExchange != hasRoutingKey) {
+      throw new IllegalArgumentException(
+        "--input-exchange and --input-routing-key must be set together");
+    }
+    if (hasExchange) {
+      channel.exchangeDeclare(cfg.inputExchange, BuiltinExchangeType.TOPIC, true);
+      channel.queueBind(cfg.inputQueue, cfg.inputExchange, cfg.inputRoutingKey);
+    }
     channel.exchangeDeclare(cfg.outputExchange, BuiltinExchangeType.TOPIC, true);
   }
 

@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ValidationConsumerTest {
 
-  private static final ObjectMapper MAPPER = new ObjectMapper();
+  private static final ObjectMapper MAPPER = Main.getMessageMapper();
   private static final long TIMEOUT_SECONDS = 2;
 
   private InMemoryMessageBus inbound;

@@ -67,6 +67,8 @@ All options:
 | `--rabbit-password`      | `guest`                           | RabbitMQ password                                         |
 | `--rabbit-vhost`         | `/`                               | RabbitMQ virtual host                                     |
 | `--input-queue`          | `dwcdp-validator`                 | Queue to consume from                                      |
+| `--input-exchange`       | *(none)*                          | Exchange to bind the input queue to (with `--input-routing-key`) |
+| `--input-routing-key`    | *(none)*                          | Routing key for that binding; both or neither             |
 | `--output-exchange`      | `crawler`                         | Exchange to publish results to                            |
 | `--output-routing-key`   | `crawl.dwcdp.validation.finished` | Routing key for published results                         |
 | `--registry-url`         | *(required)*                      | Registry API base URL (e.g. `https://api.gbif-dev.org/v1`) |
@@ -193,6 +195,9 @@ helm install dwc-dp-analyser ./helm/dwc-dp-analyser -f values.yaml
 
 ### Inbound — `dwcdp-validator`
 
+Set `--input-exchange` and `--input-routing-key` to have the service bind its queue; senders such as
+the flow-orchestrator then only need that exchange and routing key.
+
 Other fields are accepted and ignored, as long as `datasetUuid` and `attempt` are present.
 
 ```json
@@ -206,12 +211,27 @@ Other fields are accepted and ignored, as long as `datasetUuid` and `attempt` ar
 
 Always published after validation completes. Check `valid` to determine the outcome.
 
+`validationReport` is the whole `AnalysisExecution`: the `DatapackageAnalysisResult` under
+`result`, plus `metadata` and `version`, the same object stored in registry. Before 0.0.9 it was
+only the result; consumers that read the result now find it under `validationReport.result`.
+Times are UTC, written as ISO `LocalDateTime` values; Java consumers need Jackson's java-time
+module (postal-service registers it).
+
 ```json
 {
   "datasetUuid": "4fa7b334-ce0d-4e88-aaae-2e0c138d049e",
   "attempt": 3,
   "valid": true,
-  "validationReport": {}
+  "validationReport": {
+    "result": { "descriptorValidation": {}, "emlValidation": {}, "resourceAnalysisResults": [] },
+    "metadata": {
+      "started": "2026-11-18T10:00:00.25",
+      "finished": "2026-11-18T10:00:04.5",
+      "features": [],
+      "isValid": true
+    },
+    "version": "1.0"
+  }
 }
 ```
 
@@ -219,7 +239,7 @@ If the service cannot process a message (unparseable JSON, unexpected error), it
 
 ### Validation report — GBIF Registry
 
-After validation completes, the full `DatapackageAnalysisResult` is stored via:
+After validation completes, the full `AnalysisExecution` is stored via:
 
 ```
 PUT {registry-url}/dataset/{datasetKey}/validationreport/{attempt}

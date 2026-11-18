@@ -49,6 +49,10 @@ spec:
               value: {{ .Values.duckdb.tempDir | quote }}
             - name: INPUT_QUEUE
               value: {{ .Values.rabbit.inputQueue | quote }}
+            - name: INPUT_EXCHANGE
+              value: {{ .Values.rabbit.inputExchange | default "" | quote }}
+            - name: INPUT_ROUTING_KEY
+              value: {{ .Values.rabbit.inputRoutingKey | default "" | quote }}
             - name: OUTPUT_EXCHANGE
               value: {{ .Values.rabbit.outputExchange | quote }}
             - name: OUTPUT_ROUTING_KEY

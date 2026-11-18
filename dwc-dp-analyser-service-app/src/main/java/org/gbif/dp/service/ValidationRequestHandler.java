@@ -61,7 +61,7 @@ public class ValidationRequestHandler {
       request.datasetUuid(),
       request.attempt(),
       valid,
-      result.result()
+      result
     ));
 
     log.info("Processed dataset: [{}], attempt: [{}], valid: [{}]",

@@ -17,6 +17,10 @@ rabbit:
   port: 5672
   vhost: /
   inputQueue: dwcdp-validator
+  # Optional: bind the input queue (both or neither). The flow-orchestrator sends requests to an
+  # exchange and routing key; the analyser owns the binding.
+  inputExchange: ""
+  inputRoutingKey: ""
   outputExchange: crawler
   outputRoutingKey: crawl.dwcdp.validation.finished
   # Scenario 1 — both username and password from existing secret:

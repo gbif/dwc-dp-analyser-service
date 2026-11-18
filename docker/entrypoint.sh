@@ -16,6 +16,8 @@ exec java \
   --duckdb-memory "${DUCKDB_MEMORY}" \
   --duckdb-temp-dir "${DUCKDB_TEMP_DIR}" \
   --input-queue "${INPUT_QUEUE}" \
+  --input-exchange "${INPUT_EXCHANGE}" \
+  --input-routing-key "${INPUT_ROUTING_KEY}" \
   --output-exchange "${OUTPUT_EXCHANGE}" \
   --output-routing-key "${OUTPUT_ROUTING_KEY}" \
   --registry-url "${REGISTRY_URL}" \

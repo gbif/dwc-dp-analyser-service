@@ -71,6 +71,13 @@ public class Config {
       description = "Queue to consume from (default: ${DEFAULT-VALUE})")
     public String inputQueue;
 
+    @Option(names = "--input-exchange", defaultValue = "",
+      description = "Exchange to bind the input queue to; empty for no binding (default: none). "
+        + "Set together with --input-routing-key.")
+    public String inputExchange;
+    @Option(names = "--input-routing-key", defaultValue = "",
+      description = "Routing key to bind the input queue with; empty for no binding (default: none)")
+    public String inputRoutingKey;
     @Option(names = "--output-exchange", defaultValue = "crawler",
       description = "Exchange to publish results to (default: ${DEFAULT-VALUE})")
     public String outputExchange;

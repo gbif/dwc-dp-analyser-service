@@ -37,6 +37,7 @@ import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -54,6 +55,10 @@ public class Main {
     run(config);
   }
 
+  /**
+   * The mapper for the registry HTTP API: {@code LocalDateTime} is written as UTC with an offset
+   * ({@code 2026-11-18T10:00:00.250+00:00}), as registry expects.
+   */
   public static ObjectMapper getObjectMapper() {
     JavaTimeModule javaTimeModule = new JavaTimeModule();
     javaTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeMillisSerializer());
@@ -61,7 +66,20 @@ public class Main {
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(javaTimeModule);
     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    return mapper;
+  }
 
+  /**
+   * The mapper for RabbitMQ messages: standard ISO java.time values
+   * ({@code 2026-11-18T10:00:00.25}, UTC), which any consumer with the java-time module reads, and
+   * unknown fields in requests are ignored, so senders may add fields (for example an orchestrator
+   * step header).
+   */
+  public static ObjectMapper getMessageMapper() {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.registerModule(new JavaTimeModule());
+    mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+    mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     return mapper;
   }
 
@@ -70,6 +88,7 @@ public class Main {
       Channel channel = rabbit.channel();
 
       ObjectMapper mapper = getObjectMapper();
+      ObjectMapper messageMapper = getMessageMapper();
 
       DuckDbConfig duckDbConfig = DuckDbConfigBuilder.defaults()
         .dbMemory(config.duckDbConfig.memory)
@@ -79,7 +98,7 @@ public class Main {
 
       ValidationFinishedPublisher publisher = new ValidationFinishedPublisher(
         new RabbitMessagePublisher(channel, config.rabbitMq.outputExchange, config.rabbitMq.outputRoutingKey),
-        mapper);
+        messageMapper);
 
       RetryConfig retryConfig = new RetryConfig(3, 2.0, Duration.ofSeconds(1));
       RegistryClient registryClient = getRegistryClient(config, mapper, retryConfig);
@@ -88,7 +107,7 @@ public class Main {
 
       ValidationConsumer consumer = new ValidationConsumer(
         new RabbitMessageConsumer(channel, config.rabbitMq.inputQueue),
-        mapper,
+        messageMapper,
         handler);
 
       consumer.start();

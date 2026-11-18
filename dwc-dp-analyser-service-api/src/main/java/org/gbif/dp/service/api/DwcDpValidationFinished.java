@@ -13,6 +13,7 @@
  */
 package org.gbif.dp.service.api;
 
+import org.gbif.dp.analysis.api.AnalysisExecution;
 import org.gbif.dp.analysis.api.DatapackageAnalysisResult;
 
 import java.util.Objects;
@@ -21,18 +22,26 @@ import java.util.UUID;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+/**
+ * Published when a DwC-DP analysis finished.
+ *
+ * <p>{@code validationReport} is the whole {@link AnalysisExecution}: the analysis result plus its
+ * metadata (started, finished, features, {@code isValid}) and version, the same object the analyser
+ * stores in registry. Before 0.0.9 it was only the {@link DatapackageAnalysisResult}; consumers
+ * reading the result now find it under {@code validationReport.result}.
+ */
 public class DwcDpValidationFinished {
   private final UUID datasetUuid;
   private final int attempt;
   private final boolean valid;
-  private final DatapackageAnalysisResult validationReport;
+  private final AnalysisExecution<DatapackageAnalysisResult> validationReport;
 
   @JsonCreator
   public DwcDpValidationFinished(
     @JsonProperty("datasetUuid") UUID datasetUuid,
     @JsonProperty("attempt")        int attempt,
     @JsonProperty("valid")          Boolean valid,
-    @JsonProperty("validationReport") DatapackageAnalysisResult validationReport
+    @JsonProperty("validationReport") AnalysisExecution<DatapackageAnalysisResult> validationReport
   ) {
     Objects.requireNonNull(datasetUuid, "datasetUuid is null");
     Objects.requireNonNull(validationReport, "validationReport is null");
@@ -57,7 +66,7 @@ public class DwcDpValidationFinished {
     return valid;
   }
 
-  public DatapackageAnalysisResult getValidationReport() {
+  public AnalysisExecution<DatapackageAnalysisResult> getValidationReport() {
     return validationReport;
   }
 
