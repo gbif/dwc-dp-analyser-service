@@ -73,7 +73,7 @@ spec:
                   key: password
                   {{- end }}
             - name: REGISTRY_URL
-              value: {{ .Values.registry.url | required "registry.url is required" | quote }}
+              value: {{ .Values.registry.url | quote }}
             - name: REGISTRY_USER
               {{- if and .Values.registry.existingSecret .Values.registry.existingSecret.keyUsername }}
               valueFrom:
